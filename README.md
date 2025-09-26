@@ -5,7 +5,7 @@ Der Layout-Editor ist ein Obsidian-Plugin zum Entwerfen komplexer Formular- und 
 ## Kernfunktionen
 
 - **Interaktive Editor-Ansicht** – Öffne den Layout-Editor als eigene Obsidian-View mit Canvas, Strukturbaum und Inspector, um Layouts visuell zu modellieren.
-- **Modularer Store- & Presenter-Flow** – Bearbeitungen laufen über klar getrennte Daten- und Präsentationsschichten; so bleiben Automationen, Preview-Refreshs und Undo/Redo nachvollziehbar.
+- **Modularer Store- & Presenter-Flow** – Bearbeitungen laufen über klar getrennte Daten- und Präsentationsschichten; der Store liefert tief geklonte Snapshots und stellt Befehle wie `moveElement`, `resizeElement` oder `applyElementSnapshot` bereit, damit Undo/Redo deterministisch bleibt.
 - **Erweiterbare Elementbibliothek** – Registriere eigene UI-Komponenten, profitiere vom diff-basierten Rendering und sichere dich über View-Registry-Schutzmechanismen gegen doppelte Registrierungen ab.
 - **Layout-Bibliothek** – Speichere Layouts im Vault, lade sie erneut oder teile sie mit anderen Plugins. Details siehe
   [`layout-editor/docs/layout-library.md`](layout-editor/docs/layout-library.md). Persistenz-Statusmeldungen informieren über fehlgeschlagene Speichervorgänge und Export-Throttling schützt vor versehentlichen Mehrfachspeicherungen.
@@ -58,7 +58,6 @@ Die Tests bundlen über esbuild und führen alle `*.test.ts`-Dateien in `layout-
 
 ## To-Do
 
-- [Layout-Store liefert mutierbare Snapshots](todo/layout-store-immutable-snapshots.md) – Store muss unveränderliche Snapshots bereitstellen, damit Undo/Redo stabil bleibt.
 - [Stage-Pointer-Interaktionen verursachen O(n)-Scans](todo/stage-pointer-performance.md) – Pointer-Handler benötigen Caches oder Cursor, um Frame-Jank zu vermeiden.
 
 ## Weiterführende Dokumentation

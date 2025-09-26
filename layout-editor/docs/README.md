@@ -19,7 +19,7 @@ related background material.
 
 ## To-Do
 
-- [Layout-Store liefert mutierbare Snapshots](../../todo/layout-store-immutable-snapshots.md) – Dokumentation muss aktualisiert werden, sobald der Store unveränderliche Snapshots ausliefert.
+- Store-Snapshots werden tief geklont. Details zur Nutzung der neuen Befehle (`moveElement`, `resizeElement`, `applyElementSnapshot`) stehen im [State-README](../src/state/README.md).
 - [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../todo/stage-pointer-performance.md) – UI-Performance-Guides sollen Cursor-basierte Interaktionen beschreiben.
 
 For a high-level, user-facing overview of workflows and features, refer to the root

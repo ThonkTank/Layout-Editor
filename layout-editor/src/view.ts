@@ -186,8 +186,8 @@ export class LayoutEditorView extends ItemView {
                 ensureContainerDefaults: target => this.store.ensureContainerDefaults(target.id),
                 assignElementToContainer: (elementId, containerId) =>
                     this.store.assignElementToContainer(elementId, containerId),
-                syncElementElement: target => this.stageController?.refreshElement(target),
-                refreshExport: () => {},
+                syncElementElement: target => this.store.applyElementSnapshot(target, { skipExport: true }),
+                refreshExport: () => this.store.flushExport(),
                 updateStatus: () => {},
                 pushHistory: () => this.store.pushHistorySnapshot(),
                 renderInspector: () => this.renderInspector(),

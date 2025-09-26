@@ -50,6 +50,38 @@ async function runTests() {
     assert.equal(stateAfterDelete.elements.length, 1, "deleting child should reduce element count");
     assert.ok(!stateAfterDelete.elements.some(el => el.id === child!.id), "child should be removed");
 
+    const externalSnapshot = store.getState();
+    const originalElementCount = externalSnapshot.elements.length;
+    const firstElement = externalSnapshot.elements[0];
+    assert.ok(firstElement, "container element should still exist after deletion");
+    firstElement.label = "External mutation";
+    externalSnapshot.elements.pop();
+
+    const stateAfterExternalMutation = store.getState();
+    assert.equal(
+        stateAfterExternalMutation.elements.length,
+        originalElementCount,
+        "mutating snapshot arrays must not change store element count",
+    );
+    assert.notEqual(
+        stateAfterExternalMutation.elements[0]?.label,
+        "External mutation",
+        "mutating snapshot properties must not leak into the store",
+    );
+
+    store.undo();
+    const undoStateAfterExternalMutation = store.getState();
+    assert.ok(
+        undoStateAfterExternalMutation.elements.some(el => el.id === child!.id),
+        "undo should restore deleted child even after snapshot mutation",
+    );
+    store.redo();
+    const redoStateAfterExternalMutation = store.getState();
+    assert.ok(
+        !redoStateAfterExternalMutation.elements.some(el => el.id === child!.id),
+        "redo should reapply deletion after snapshot mutation",
+    );
+
     unsubscribe();
     assert.ok(createdIds.size >= 2, "should have observed element ids through subscription");
 
@@ -68,8 +100,8 @@ async function runTests() {
 
     receivedEvents.length = 0; // focus on drag interactions only
 
-    throttledStore.updateElementFrame(elementId!, { x: 10, y: 12 });
-    throttledStore.updateElementFrame(elementId!, { x: 20, y: 24 });
+    throttledStore.moveElement(elementId!, { x: 10, y: 12 }, { skipExport: true });
+    throttledStore.moveElement(elementId!, { x: 20, y: 24 }, { skipExport: true });
 
     const stateEventsDuringDrag = receivedEvents.filter(event => event.type === "state");
     const exportEventsDuringDrag = receivedEvents.filter(event => event.type === "export");

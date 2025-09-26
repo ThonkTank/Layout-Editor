@@ -3,7 +3,6 @@
 Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Datei beschreibt ein konkretes Thema mit Kontext, betroffenen Modulen und Lösungsideen. Sobald ein To-Do erledigt ist, wird es hier entfernt oder archiviert.
 
 ## Dateien
-- [`layout-store-immutable-snapshots.md`](layout-store-immutable-snapshots.md) – Store liefert veränderliche Referenzen; Undo/Redo und History benötigen defensive Snapshots.
 - [`stage-pointer-performance.md`](stage-pointer-performance.md) – Pointer-Interaktionen der Stage verursachen lineare Scans und Mehrfach-Layouts.
 
 ## Konventionen
