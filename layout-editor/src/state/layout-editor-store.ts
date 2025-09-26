@@ -42,6 +42,8 @@ interface ApplyLayoutOptions {
 export class LayoutEditorStore {
     private readonly listeners = new Set<(event: LayoutEditorStoreEvent) => void>();
     private readonly tree = new LayoutTree();
+    private exportPayload = "";
+    private exportDirty = true;
     private state: LayoutEditorState = {
         canvasWidth: 800,
         canvasHeight: 600,
@@ -65,12 +67,13 @@ export class LayoutEditorStore {
             snapshot => this.restoreSnapshot(snapshot),
         );
         this.history.reset(this.captureSnapshot());
+        this.exportDirty = true;
     }
 
     subscribe(listener: (event: LayoutEditorStoreEvent) => void) {
         this.listeners.add(listener);
         listener({ type: "state", state: this.state });
-        listener({ type: "export", payload: this.serializeState() });
+        listener({ type: "export", payload: this.ensureExportPayload() });
         return () => {
             this.listeners.delete(listener);
         };
@@ -222,7 +225,7 @@ export class LayoutEditorStore {
             changed = true;
         }
         if (changed) {
-            this.emitState();
+            this.emitState({ skipExport: true });
         }
     }
 
@@ -320,7 +323,7 @@ export class LayoutEditorStore {
             changed = true;
         }
         if (changed) {
-            this.emitState();
+            this.emitState({ skipExport: true });
         }
     }
 
@@ -380,6 +383,14 @@ export class LayoutEditorStore {
         return JSON.stringify(payload, null, 2);
     }
 
+    private ensureExportPayload(): string {
+        if (this.exportDirty) {
+            this.exportPayload = this.serializeState();
+            this.exportDirty = false;
+        }
+        return this.exportPayload;
+    }
+
     updateSavedLayoutMetadata(layout: SavedLayout) {
         this.patchState({
             lastSavedLayoutId: layout.id,
@@ -433,11 +444,19 @@ export class LayoutEditorStore {
         return null;
     }
 
-    private emitState() {
-        this.patchState({});
+    flushExport() {
+        if (!this.exportDirty) return;
+        const payload = this.ensureExportPayload();
+        for (const listener of this.listeners) {
+            listener({ type: "export", payload });
+        }
     }
 
-    private patchState(patch: Partial<LayoutEditorState>) {
+    private emitState(options?: { skipExport?: boolean }) {
+        this.patchState({}, options);
+    }
+
+    private patchState(patch: Partial<LayoutEditorState>, options?: { skipExport?: boolean }) {
         const elements = this.tree.getElementsSnapshot();
         this.state = {
             ...this.state,
@@ -446,10 +465,16 @@ export class LayoutEditorStore {
             canUndo: this.history.canUndo,
             canRedo: this.history.canRedo,
         };
-        const serialized = this.serializeState();
-        for (const listener of this.listeners) {
+        this.exportDirty = true;
+        const listeners = Array.from(this.listeners);
+        for (const listener of listeners) {
             listener({ type: "state", state: this.state });
-            listener({ type: "export", payload: serialized });
+        }
+        if (!options?.skipExport) {
+            const payload = this.ensureExportPayload();
+            for (const listener of listeners) {
+                listener({ type: "export", payload });
+            }
         }
     }
 

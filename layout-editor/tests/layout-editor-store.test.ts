@@ -52,6 +52,44 @@ async function runTests() {
 
     unsubscribe();
     assert.ok(createdIds.size >= 2, "should have observed element ids through subscription");
+
+    // Export throttling during drag updates
+    const throttledStore = new LayoutEditorStore();
+    const receivedEvents: LayoutEditorStoreEvent[] = [];
+    const unsubscribeThrottled = throttledStore.subscribe(event => {
+        receivedEvents.push(event);
+    });
+
+    receivedEvents.length = 0; // drop initial snapshot events
+
+    throttledStore.createElement("label");
+    const elementId = throttledStore.getState().selectedElementId;
+    assert.ok(elementId, "newly created element should be selected");
+
+    receivedEvents.length = 0; // focus on drag interactions only
+
+    throttledStore.updateElementFrame(elementId!, { x: 10, y: 12 });
+    throttledStore.updateElementFrame(elementId!, { x: 20, y: 24 });
+
+    const stateEventsDuringDrag = receivedEvents.filter(event => event.type === "state");
+    const exportEventsDuringDrag = receivedEvents.filter(event => event.type === "export");
+    assert.ok(stateEventsDuringDrag.length >= 2, "state events should be emitted for drag updates");
+    assert.equal(exportEventsDuringDrag.length, 0, "export events should be throttled during drag");
+
+    throttledStore.flushExport();
+
+    const exportEventsAfterFlush = receivedEvents.filter(event => event.type === "export");
+    assert.equal(exportEventsAfterFlush.length, 1, "flush should publish a single export payload");
+
+    throttledStore.flushExport();
+    const exportEventsAfterSecondFlush = receivedEvents.filter(event => event.type === "export");
+    assert.equal(
+        exportEventsAfterSecondFlush.length,
+        exportEventsAfterFlush.length,
+        "subsequent flush without changes should not emit",
+    );
+
+    unsubscribeThrottled();
 }
 
 async function run() {
