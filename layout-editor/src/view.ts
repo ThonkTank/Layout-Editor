@@ -7,12 +7,13 @@ import {
 import { AttributePopoverController } from "./attribute-popover";
 import { renderInspectorPanel } from "./inspector-panel";
 import { LayoutElement, LayoutElementDefinition } from "./types";
-import { clamp } from "./utils";
 import { onViewBindingsChanged } from "./view-registry";
 import { LayoutEditorStore, LayoutEditorState } from "./state/layout-editor-store";
 import { StageController } from "./presenters/stage-controller";
 import { StructurePanelPresenter } from "./presenters/structure-panel";
 import { HeaderControlsPresenter } from "./presenters/header-controls";
+import { EditorShellComponent, PanelSizeOptions } from "./ui/components/editor-shell";
+import { renderComponent } from "./ui/components/component";
 
 export const VIEW_LAYOUT_EDITOR = "salt-layout-editor";
 
@@ -29,10 +30,8 @@ export class LayoutEditorView extends ItemView {
     private headerPresenter: HeaderControlsPresenter | null = null;
     private stageController: StageController | null = null;
     private structurePresenter: StructurePanelPresenter | null = null;
+    private shell: EditorShellComponent | null = null;
     private inspectorHost: HTMLElement | null = null;
-    private structurePanelEl: HTMLElement | null = null;
-    private inspectorPanelEl: HTMLElement | null = null;
-    private bodyEl: HTMLElement | null = null;
 
     private disposeDefinitionListener: (() => void) | null = null;
     private disposeViewBindingListener: (() => void) | null = null;
@@ -86,10 +85,9 @@ export class LayoutEditorView extends ItemView {
         this.disposeDefinitionListener = null;
         this.disposeViewBindingListener?.();
         this.disposeViewBindingListener = null;
-        this.structurePanelEl = null;
-        this.inspectorPanelEl = null;
+        this.shell?.destroy();
+        this.shell = null;
         this.inspectorHost = null;
-        this.bodyEl = null;
         this.contentEl.empty();
         this.contentEl.removeClass("sm-layout-editor");
     }
@@ -98,37 +96,31 @@ export class LayoutEditorView extends ItemView {
         const root = this.contentEl;
         root.empty();
 
-        const headerHost = root.createDiv({ cls: "sm-le-wrapper" });
-        this.headerPresenter = new HeaderControlsPresenter({ host: headerHost, store: this.store, app: this.app });
+        const shell = new EditorShellComponent({
+            minPanelWidth: this.minPanelWidth,
+            minStageWidth: this.minStageWidth,
+            resizerSize: this.resizerSize,
+            initialSizes: {
+                structureWidth: this.structureWidth,
+                inspectorWidth: this.inspectorWidth,
+            },
+            onResizePanels: sizes => this.onShellResize(sizes),
+        });
+        this.shell = renderComponent(root, shell);
 
-        this.bodyEl = root.createDiv({ cls: "sm-le-body" });
+        this.headerPresenter = new HeaderControlsPresenter({
+            host: shell.getHeaderHost(),
+            store: this.store,
+            app: this.app,
+        });
 
-        this.structurePanelEl = this.bodyEl.createDiv({ cls: "sm-le-panel sm-le-panel--structure" });
-        this.structurePanelEl.createEl("h3", { text: "Struktur" });
-        const structureHost = this.structurePanelEl.createDiv({ cls: "sm-le-structure" });
-
-        const leftResizer = this.bodyEl.createDiv({ cls: "sm-le-resizer sm-le-resizer--structure" });
-        leftResizer.setAttr("role", "separator");
-        leftResizer.setAttr("aria-orientation", "vertical");
-        leftResizer.tabIndex = 0;
-        leftResizer.onpointerdown = event => this.beginResizePanel(event, "structure");
-
-        const stageWrapper = this.bodyEl.createDiv({ cls: "sm-le-stage" });
         this.stageController = new StageController({
-            host: stageWrapper,
+            host: shell.getStageHost(),
             store: this.store,
             onSelectElement: id => this.handleSelectElement(id),
         });
 
-        const rightResizer = this.bodyEl.createDiv({ cls: "sm-le-resizer sm-le-resizer--inspector" });
-        rightResizer.setAttr("role", "separator");
-        rightResizer.setAttr("aria-orientation", "vertical");
-        rightResizer.tabIndex = 0;
-        rightResizer.onpointerdown = event => this.beginResizePanel(event, "inspector");
-
-        this.inspectorPanelEl = this.bodyEl.createDiv({ cls: "sm-le-panel sm-le-panel--inspector" });
-        this.inspectorPanelEl.createEl("h3", { text: "Eigenschaften" });
-        this.inspectorHost = this.inspectorPanelEl.createDiv({ cls: "sm-le-inspector" });
+        this.inspectorHost = shell.getInspectorHost();
         this.registerDomEvent(this.inspectorHost, "sm-layout-open-attributes" as any, (ev: Event) => {
             const detail = (ev as CustomEvent<{ elementId: string; anchor: HTMLElement }>).detail;
             if (!detail) return;
@@ -140,13 +132,15 @@ export class LayoutEditorView extends ItemView {
         });
 
         this.structurePresenter = new StructurePanelPresenter({
-            host: structureHost,
+            host: shell.getStructureHost(),
             store: this.store,
             stage: this.stageController,
             onSelectElement: id => this.handleSelectElement(id),
         });
-
-        this.applyPanelSizes();
+        shell.setPanelSizes({
+            structureWidth: this.structureWidth,
+            inspectorWidth: this.inspectorWidth,
+        });
     }
 
     private handleStateChange(state: LayoutEditorState) {
@@ -157,8 +151,16 @@ export class LayoutEditorView extends ItemView {
             this.currentSelectionId = state.selectedElementId;
         }
         this.renderInspector(state);
-        this.applyPanelSizes();
+        this.shell?.setPanelSizes({
+            structureWidth: this.structureWidth,
+            inspectorWidth: this.inspectorWidth,
+        });
         this.attributePopover.refresh();
+    }
+
+    private onShellResize(sizes: PanelSizeOptions) {
+        this.structureWidth = sizes.structureWidth;
+        this.inspectorWidth = sizes.inspectorWidth;
     }
 
     private handleSelectElement(id: string | null) {
@@ -203,60 +205,6 @@ export class LayoutEditorView extends ItemView {
             this.attributePopover.close();
         }
         this.store.deleteElement(id);
-    }
-
-    private applyPanelSizes() {
-        if (this.structurePanelEl) {
-            const width = Math.max(this.minPanelWidth, Math.round(this.structureWidth));
-            this.structurePanelEl.style.flex = `0 0 ${width}px`;
-            this.structurePanelEl.style.width = `${width}px`;
-        }
-        if (this.inspectorPanelEl) {
-            const width = Math.max(this.minPanelWidth, Math.round(this.inspectorWidth));
-            this.inspectorPanelEl.style.flex = `0 0 ${width}px`;
-            this.inspectorPanelEl.style.width = `${width}px`;
-        }
-    }
-
-    private beginResizePanel(event: PointerEvent, target: "structure" | "inspector") {
-        if (event.button !== 0) return;
-        if (!this.bodyEl) return;
-        event.preventDefault();
-        const handle = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-        const pointerId = event.pointerId;
-        const otherWidth = target === "structure" ? this.inspectorWidth : this.structureWidth;
-        const onPointerMove = (ev: PointerEvent) => {
-            if (ev.pointerId !== pointerId) return;
-            const bodyRect = this.bodyEl!.getBoundingClientRect();
-            const maxWidth = Math.max(
-                this.minPanelWidth,
-                bodyRect.width - otherWidth - this.resizerSize * 2 - this.minStageWidth,
-            );
-            let proposedWidth: number;
-            if (target === "structure") {
-                proposedWidth = ev.clientX - bodyRect.left - this.resizerSize / 2;
-            } else {
-                proposedWidth = bodyRect.right - ev.clientX - this.resizerSize / 2;
-            }
-            const next = clamp(Math.round(proposedWidth), this.minPanelWidth, maxWidth);
-            if (target === "structure") {
-                this.structureWidth = next;
-            } else {
-                this.inspectorWidth = next;
-            }
-            this.applyPanelSizes();
-        };
-        const onPointerUp = (ev: PointerEvent) => {
-            if (ev.pointerId !== pointerId) return;
-            handle?.removeEventListener("pointermove", onPointerMove);
-            handle?.removeEventListener("pointerup", onPointerUp);
-            handle?.releasePointerCapture(pointerId);
-            handle?.removeClass("is-active");
-        };
-        handle?.setPointerCapture(pointerId);
-        handle?.addClass("is-active");
-        handle?.addEventListener("pointermove", onPointerMove);
-        handle?.addEventListener("pointerup", onPointerUp);
     }
 
     private onKeyDown = (ev: KeyboardEvent) => {
