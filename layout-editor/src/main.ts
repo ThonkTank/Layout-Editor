@@ -9,7 +9,7 @@ import {
     resetLayoutElementDefinitions,
     unregisterLayoutElementDefinition as unregisterElementDefinition,
 } from "./definitions";
-import { listSavedLayouts, loadSavedLayout, saveLayoutToLibrary } from "./layout-library";
+import { listSavedLayouts, loadSavedLayout, saveLayoutToLibrary, type VersionedSavedLayout } from "./layout-library";
 import {
     getViewBindings,
     onViewBindingsChanged,
@@ -18,16 +18,80 @@ import {
     unregisterViewBinding as unregisterView,
     type LayoutViewBindingDefinition,
 } from "./view-registry";
-import type {
-    LayoutBlueprint,
-    LayoutElementDefinition,
-    LayoutElementType,
-    SavedLayout,
-} from "./types";
+import type { LayoutBlueprint, LayoutElementDefinition, LayoutElementType } from "./types";
 import { LAYOUT_EDITOR_CSS } from "./css";
 import { ensureSeedLayouts } from "./seed-layouts";
 
+export const LAYOUT_EDITOR_API_VERSION = "1.0.0";
+
+type SemVerTuple = [number, number, number];
+
+function parseVersionTuple(version: string): SemVerTuple {
+    const [major, minor, patch] = version
+        .split(".")
+        .slice(0, 3)
+        .map(part => part.replace(/[^0-9]/g, ""));
+    const toNumber = (value: string | undefined) => {
+        const numeric = Number.parseInt(value ?? "0", 10);
+        return Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
+    };
+    return [toNumber(major), toNumber(minor), toNumber(patch)];
+}
+
+function compareVersions(current: SemVerTuple, minimum: SemVerTuple): number {
+    for (let index = 0; index < 3; index += 1) {
+        if (current[index] > minimum[index]) return 1;
+        if (current[index] < minimum[index]) return -1;
+    }
+    return 0;
+}
+
+export interface LayoutEditorApiCompatibility {
+    readonly apiVersion: string;
+    isAtLeast(version: string): boolean;
+    assertMinimum(version: string, featureName?: string): void;
+    withMinimum<T>(version: string, feature: () => T): T | undefined;
+}
+
+export function createLayoutEditorApiCompatibility(version: string): LayoutEditorApiCompatibility {
+    const normalized = parseVersionTuple(version);
+    const normalizedVersion = `${normalized[0]}.${normalized[1]}.${normalized[2]}`;
+
+    const isAtLeast = (candidate: string): boolean => {
+        const minimum = parseVersionTuple(candidate);
+        return compareVersions(normalized, minimum) >= 0;
+    };
+
+    const assertMinimum = (candidate: string, featureName?: string) => {
+        if (!isAtLeast(candidate)) {
+            const requirement = `${candidate}`;
+            const detail = featureName ? ` für ${featureName}` : "";
+            throw new Error(
+                `Layout Editor API Version ${requirement}${detail} wird benötigt, aktuell ist ${normalizedVersion}.`,
+            );
+        }
+    };
+
+    const withMinimum = <T>(candidate: string, feature: () => T): T | undefined => {
+        if (!isAtLeast(candidate)) {
+            return undefined;
+        }
+        return feature();
+    };
+
+    return {
+        apiVersion: normalizedVersion,
+        isAtLeast,
+        assertMinimum,
+        withMinimum,
+    };
+}
+
 export interface LayoutEditorPluginApi {
+    apiVersion: string;
+    isApiVersionAtLeast(version: string): boolean;
+    assertApiVersion(version: string, featureName?: string): void;
+    withMinimumApiVersion<T>(version: string, feature: () => T): T | undefined;
     viewType: string;
     openView(): Promise<void>;
     registerElementDefinition(definition: LayoutElementDefinition): void;
@@ -35,9 +99,9 @@ export interface LayoutEditorPluginApi {
     resetElementDefinitions(definitions?: LayoutElementDefinition[]): void;
     getElementDefinitions(): LayoutElementDefinition[];
     onDefinitionsChanged(listener: (definitions: LayoutElementDefinition[]) => void): () => void;
-    saveLayout(payload: LayoutBlueprint & { name: string; id?: string }): Promise<SavedLayout>;
-    listLayouts(): Promise<SavedLayout[]>;
-    loadLayout(id: string): Promise<SavedLayout | null>;
+    saveLayout(payload: LayoutBlueprint & { name: string; id?: string }): Promise<VersionedSavedLayout>;
+    listLayouts(): Promise<VersionedSavedLayout[]>;
+    loadLayout(id: string): Promise<VersionedSavedLayout | null>;
     registerViewBinding(definition: LayoutViewBindingDefinition): void;
     unregisterViewBinding(id: string): void;
     resetViewBindings(definitions?: LayoutViewBindingDefinition[]): void;
@@ -67,7 +131,13 @@ export default class LayoutEditorPlugin extends Plugin {
 
         this.injectCss();
 
+        const compatibility = createLayoutEditorApiCompatibility(LAYOUT_EDITOR_API_VERSION);
+
         this.api = {
+            apiVersion: compatibility.apiVersion,
+            isApiVersionAtLeast: compatibility.isAtLeast,
+            assertApiVersion: compatibility.assertMinimum,
+            withMinimumApiVersion: compatibility.withMinimum,
             viewType: VIEW_LAYOUT_EDITOR,
             openView: () => this.openView(),
             registerElementDefinition,
