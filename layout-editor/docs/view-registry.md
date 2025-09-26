@@ -1,6 +1,6 @@
 # View Registry
 
-Die View-Registry kapselt alle Bindings, über die externe Plugins eigene Visualisierungen im Layout-Editor verfügbar machen. Sie stellt eine kleine API zur Verfügung, mit der Module ihre Views registrieren, abfragen und auf Änderungen reagieren können.
+Die View-Registry kapselt alle Bindings, über die externe Plugins eigene Visualisierungen im Layout-Editor verfügbar machen. Sie stellt eine kleine API zur Verfügung, mit der Module ihre Views registrieren, abfragen und auf Änderungen reagieren können. Eine Gesamtsicht auf alle öffentlich angebotenen Methoden inklusive Workflows bietet die [Plugin-API-Referenz](./plugin-api.md).
 
 ## Registrierung
 
