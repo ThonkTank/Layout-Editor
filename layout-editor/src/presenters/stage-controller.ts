@@ -3,17 +3,19 @@ import { isContainerType } from "../definitions";
 import { LayoutEditorStore } from "../state/layout-editor-store";
 import { LayoutElement } from "../types";
 import { renderComponent } from "../ui/components/component";
-import { StageComponent } from "../ui/components/stage";
+import { StageCameraObserver, StageComponent } from "../ui/components/stage";
 
 interface StageControllerOptions {
     host: HTMLElement;
     store: LayoutEditorStore;
     onSelectElement?(id: string | null): void;
+    cameraTelemetry?: StageCameraObserver;
 }
 
 export class StageController {
     private readonly component: StageComponent;
     private unsubscribe: (() => void) | null = null;
+    private releaseCameraObserver: (() => void) | null = null;
 
     constructor(private readonly options: StageControllerOptions) {
         this.component = new StageComponent({
@@ -21,6 +23,9 @@ export class StageController {
             onSelectElement: options.onSelectElement,
         });
         renderComponent(options.host, this.component);
+        if (options.cameraTelemetry) {
+            this.releaseCameraObserver = this.component.observeCamera(options.cameraTelemetry);
+        }
         const initialState = options.store.getState();
         for (const element of initialState.elements) {
             if (isContainerType(element.type)) {
@@ -50,6 +55,8 @@ export class StageController {
     }
 
     dispose() {
+        this.releaseCameraObserver?.();
+        this.releaseCameraObserver = null;
         this.unsubscribe?.();
         this.unsubscribe = null;
         this.component.destroy();
