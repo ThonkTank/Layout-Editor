@@ -22,6 +22,11 @@ class LayoutViewBindingRegistry {
             throw new Error("View binding requires a non-empty id");
         }
         const id = def.id.trim();
+        if (this.bindings.has(id)) {
+            const existing = this.bindings.get(id);
+            const existingLabel = existing?.label ? ` (currently registered as "${existing.label}")` : "";
+            throw new Error(`Duplicate view binding id "${id}"${existingLabel}`);
+        }
         this.bindings.set(id, { ...def, id });
         this.emit();
     }
@@ -33,11 +38,38 @@ class LayoutViewBindingRegistry {
     }
 
     replaceAll(definitions: LayoutViewBindingDefinition[]) {
-        this.bindings.clear();
+        const prepared = new Map<string, LayoutViewBindingDefinition>();
+        const duplicates = new Map<string, LayoutViewBindingDefinition[]>();
+
         for (const def of definitions) {
-            if (!def.id?.trim()) continue;
+            if (!def.id?.trim()) {
+                continue;
+            }
             const id = def.id.trim();
-            this.bindings.set(id, { ...def, id });
+            if (prepared.has(id)) {
+                const list = duplicates.get(id) ?? [prepared.get(id)!];
+                list.push(def);
+                duplicates.set(id, list);
+                continue;
+            }
+            prepared.set(id, { ...def, id });
+        }
+
+        if (duplicates.size > 0) {
+            const details = Array.from(duplicates.entries())
+                .map(([id, defs]) => {
+                    const labels = defs
+                        .map(def => def.label?.trim() || "(no label)")
+                        .join(", ");
+                    return `"${id}" [${labels}]`;
+                })
+                .join(", ");
+            throw new Error(`Duplicate view binding ids detected: ${details}`);
+        }
+
+        this.bindings.clear();
+        for (const [id, def] of prepared.entries()) {
+            this.bindings.set(id, def);
         }
         this.emit();
     }
@@ -48,6 +80,28 @@ class LayoutViewBindingRegistry {
 
     get(id: string): LayoutViewBindingDefinition | undefined {
         return this.bindings.get(id);
+    }
+
+    has(id: string): boolean {
+        const normalized = id.trim();
+        if (!normalized) {
+            return false;
+        }
+        return this.bindings.has(normalized);
+    }
+
+    getIds(): string[] {
+        return Array.from(this.bindings.keys());
+    }
+
+    getByTag(tag: string): LayoutViewBindingDefinition[] {
+        const normalized = tag.trim().toLowerCase();
+        if (!normalized) {
+            return [];
+        }
+        return this.getAll().filter(binding =>
+            binding.tags?.some(t => t.toLowerCase() === normalized)
+        );
     }
 
     onChange(listener: Listener): () => void {
@@ -87,4 +141,16 @@ export function getViewBinding(id: string): LayoutViewBindingDefinition | undefi
 
 export function onViewBindingsChanged(listener: Listener): () => void {
     return registry.onChange(listener);
+}
+
+export function hasViewBinding(id: string): boolean {
+    return registry.has(id);
+}
+
+export function getViewBindingIds(): string[] {
+    return registry.getIds();
+}
+
+export function getViewBindingsByTag(tag: string): LayoutViewBindingDefinition[] {
+    return registry.getByTag(tag);
 }
