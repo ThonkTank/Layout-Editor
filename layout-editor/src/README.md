@@ -29,6 +29,7 @@ Der `src/`-Ordner enthält den TypeScript-Quellcode des Layout Editors. Er ist n
 
 - [`state/`](state) – Kapselt den zentralen Store.
   - [`layout-editor-store.ts`](state/layout-editor-store.ts) – Verwaltet Canvas, Elemente, Auswahl, Drag- und History-State und emittiert Änderungsereignisse.
+  - **Offene Aufgabe:** Der Store gibt derzeit veränderliche Referenzen aus und ermöglicht damit Seiteneffekte außerhalb des Stores. Details und Lösungsansätze stehen im To-Do [`../../todo/layout-store-consistency.md`](../../todo/layout-store-consistency.md).
 
 Weiterführende Details zum Datenmodell und zur Store-Architektur findest du in [`../docs/data-model-overview.md`](../docs/data-model-overview.md) und [`../docs/history-design.md`](../docs/history-design.md).
 

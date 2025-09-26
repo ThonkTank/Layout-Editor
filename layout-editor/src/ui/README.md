@@ -19,6 +19,7 @@ Dieser Ordner enthält die UI-Hilfsfunktionen des Layout-Editors – insbesonder
 - **Tests**: Änderungen an UI-Hilfen erfordern Aktualisierungen in `../../tests/ui-component.test.ts` bzw. `../../tests/ui-diff-renderer.test.ts`.
 
 ## Weiterführende Dokumentation
-- Architektur-Überblick: [`../LayoutEditorOverview.txt`](../LayoutEditorOverview.txt)
+- Architektur-Überblick: [`../README.md`](../README.md)
 - Performance-Guidelines für UI-Widgets: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
+- Bekannte Optimierungsbedarfe rund um Stage-Interaktionen: [`../../../todo/layout-store-consistency.md`](../../../todo/layout-store-consistency.md)
 - Projektweite Einordnung & Workflows: [`../../../README.md`](../../../README.md)

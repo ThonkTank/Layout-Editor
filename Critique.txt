@@ -1,7 +1,0 @@
-# Layout Editor Plugin – Aktuelle Kritik
-
-## 1. Zustand & Datenfluss
-- **Mutierbarer Store-Snapshot:** `LayoutEditorStore.getState()` gibt die interne `state`-Instanz mit direkten Verweisen auf die `LayoutElement`-Objekte aus (`src/state/layout-editor-store.ts`, Zeilen 79–137, 326–360). UI-Schichten mutieren diese Objekte außerhalb des Stores (z. B. `StageComponent.beginMove` aktualisiert Kinderkoordinaten direkt), wodurch Undo/Redo und History-Snapshots inkonsistent werden können. Der Store benötigt unveränderliche Snapshots oder Proxies, damit externe Konsumenten keine Seiteneffekte einführen.
-
-## 2. Performance & Interaktion
-- **Stage-Interaktionen mit O(n)-Scans pro Frame:** Die Pointer-Handler der Stage greifen bei jedem Move/Resize-Event per `store.getState().elements.find(...)` auf Eltern- und Kindknoten zu (`src/ui/components/stage.ts`, Zeilen 151–206, 213–273). Diese linearen Suchen laufen pro Frame und werden zusätzlich durch direkte Kindmutationen in den gleichen Loops verstärkt. Für große Layouts führt das zu Jank und zu mehrfachen Re-Layouts. Benötigt wird ein lokaler Cache (z. B. Map auf `LayoutTree`) oder Cursor-Objekte, die ohne Vollscans und Nebenwirkungen arbeiten.
