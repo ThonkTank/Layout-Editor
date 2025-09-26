@@ -1,9 +1,12 @@
 // src/presenters/structure-panel.ts
-import { getElementTypeLabel } from "../definitions";
 import { LayoutEditorStore } from "../state/layout-editor-store";
 import { LayoutElement } from "../types";
-import { collectDescendantIds, isContainerElement } from "../utils";
-import { createElementsButton } from "../elements/ui";
+import { isContainerElement } from "../utils";
+import { renderComponent } from "../ui/components/component";
+import {
+    StructureTreeComponent,
+    type StructureTreeState,
+} from "../ui/components/structure-tree";
 import { StageController } from "./stage-controller";
 
 interface StructurePanelOptions {
@@ -14,222 +17,76 @@ interface StructurePanelOptions {
 }
 
 export class StructurePanelPresenter {
-    private rootDropZone: HTMLElement | null = null;
+    private readonly tree: StructureTreeComponent;
     private unsubscribe: (() => void) | null = null;
 
     constructor(private readonly options: StructurePanelOptions) {
+        this.tree = new StructureTreeComponent({
+            onSelect: id => this.handleSelect(id),
+            onReparent: payload => this.handleReparent(payload.elementId, payload.nextParentId),
+            onReorder: payload => this.handleReorder(payload.elementId, payload.targetId, payload.position),
+            onDragStateChange: id => this.options.store.setDraggedElement(id),
+        });
+        renderComponent(options.host, this.tree);
+        const initialState = this.options.store.getState();
+        this.tree.setState(this.createStateSnapshot(initialState.elements, initialState.selectedElementId, initialState.draggedElementId));
         this.unsubscribe = options.store.subscribe(event => {
             if (event.type === "state") {
-                this.render(event.state.elements, event.state.selectedElementId);
+                this.tree.setState(
+                    this.createStateSnapshot(event.state.elements, event.state.selectedElementId, event.state.draggedElementId),
+                );
             }
         });
     }
 
     dispose() {
         this.unsubscribe?.();
-        this.rootDropZone = null;
+        this.unsubscribe = null;
+        this.tree.destroy();
     }
 
-    private render(elements: LayoutElement[], selectedId: string | null) {
-        const host = this.options.host;
-        host.empty();
-        this.rootDropZone = null;
-        if (!elements.length) {
-            host.createDiv({ cls: "sm-le-empty", text: "Noch keine Elemente." });
-            return;
+    private handleSelect(id: string) {
+        this.options.onSelectElement(id);
+        const element = this.options.store.getState().elements.find(el => el.id === id);
+        if (element) {
+            this.options.stage.focusElement(element);
         }
+    }
 
-        const elementById = new Map(elements.map(element => [element.id, element]));
-        const childrenByParent = new Map<string | null, LayoutElement[]>();
+    private handleReparent(elementId: string, nextParentId: string | null) {
+        this.options.store.assignElementToContainer(elementId, nextParentId);
+    }
 
-        for (const element of elements) {
-            const parentExists = element.parentId && elementById.has(element.parentId) ? element.parentId : null;
-            const key = parentExists ?? null;
-            const bucket = childrenByParent.get(key);
-            if (bucket) {
-                bucket.push(element);
-            } else {
-                childrenByParent.set(key, [element]);
-            }
+    private handleReorder(elementId: string, targetId: string, position: "before" | "after") {
+        const state = this.options.store.getState();
+        const dragged = state.elements.find(el => el.id === elementId);
+        const target = state.elements.find(el => el.id === targetId);
+        if (!dragged || !target) return;
+        if (!dragged.parentId || dragged.parentId !== target.parentId) return;
+        const container = state.elements.find(el => el.id === dragged.parentId);
+        if (!container || !isContainerElement(container) || !container.children) return;
+        const currentIndex = container.children.indexOf(elementId);
+        const targetIndex = container.children.indexOf(targetId);
+        if (currentIndex === -1 || targetIndex === -1) return;
+        let destinationIndex = targetIndex + (position === "after" ? 1 : 0);
+        if (destinationIndex > currentIndex) {
+            destinationIndex -= 1;
         }
-
-        for (const element of elements) {
-            if (!isContainerElement(element) || !element.children?.length) continue;
-            const list = childrenByParent.get(element.id);
-            if (!list) continue;
-            const lookup = new Map(list.map(child => [child.id, child]));
-            const ordered: LayoutElement[] = [];
-            for (const childId of element.children) {
-                const child = lookup.get(childId);
-                if (child) {
-                    ordered.push(child);
-                    lookup.delete(childId);
-                }
-            }
-            for (const child of list) {
-                if (lookup.has(child.id)) {
-                    ordered.push(child);
-                    lookup.delete(child.id);
-                }
-            }
-            childrenByParent.set(element.id, ordered);
+        const offset = destinationIndex - currentIndex;
+        if (offset !== 0) {
+            this.options.store.moveChildInContainer(container.id, elementId, offset);
         }
+    }
 
-        const rootDropZone = host.createDiv({
-            cls: "sm-le-structure__root-drop",
-            text: "Ziehe ein Element hierher, um es aus seinem Container zu lösen.",
-        });
-        this.rootDropZone = rootDropZone;
-
-        const canDropToRoot = () => {
-            const draggedId = this.options.store.getState().draggedElementId;
-            if (!draggedId) return false;
-            const dragged = elementById.get(draggedId);
-            if (!dragged) return false;
-            return Boolean(dragged.parentId);
+    private createStateSnapshot(
+        elements: LayoutElement[],
+        selectedId: string | null,
+        draggedId: string | null,
+    ): StructureTreeState {
+        return {
+            elements,
+            selectedId,
+            draggedElementId: draggedId,
         };
-
-        rootDropZone.addEventListener("dragenter", event => {
-            if (!canDropToRoot()) return;
-            event.preventDefault();
-            rootDropZone.addClass("is-active");
-        });
-        rootDropZone.addEventListener("dragover", event => {
-            if (!canDropToRoot()) return;
-            event.preventDefault();
-            if (event.dataTransfer) {
-                event.dataTransfer.dropEffect = "move";
-            }
-            rootDropZone.addClass("is-active");
-        });
-        rootDropZone.addEventListener("dragleave", event => {
-            const related = event.relatedTarget as HTMLElement | null;
-            if (!related || !rootDropZone.contains(related)) {
-                rootDropZone.removeClass("is-active");
-            }
-        });
-        rootDropZone.addEventListener("drop", event => {
-            if (!canDropToRoot()) return;
-            event.preventDefault();
-            event.stopPropagation();
-            rootDropZone.removeClass("is-active");
-            const draggedId = this.options.store.getState().draggedElementId;
-            if (draggedId) {
-                this.options.store.assignElementToContainer(draggedId, null);
-            }
-            this.clearDragState();
-        });
-
-        const renderLevel = (parentId: string | null, container: HTMLElement) => {
-            const children = childrenByParent.get(parentId);
-            if (!children || !children.length) return;
-            const listEl = container.createEl("ul", { cls: "sm-le-structure__list" });
-            for (const child of children) {
-                const itemEl = listEl.createEl("li", { cls: "sm-le-structure__item" });
-                const entry = createElementsButton(itemEl, { label: "" });
-                entry.addClass("sm-le-structure__entry");
-                entry.dataset.id = child.id;
-                if (selectedId === child.id) {
-                    entry.addClass("is-selected");
-                }
-                const name = child.label?.trim() || getElementTypeLabel(child.type);
-                entry.createSpan({ cls: "sm-le-structure__title", text: name });
-                const parentElement = child.parentId ? elementById.get(child.parentId) ?? null : null;
-                const metaParts: string[] = [getElementTypeLabel(child.type)];
-                if (parentElement) {
-                    const parentName = parentElement.label?.trim() || getElementTypeLabel(parentElement.type);
-                    metaParts.push(`Übergeordnet: ${parentName}`);
-                }
-                if (isContainerElement(child)) {
-                    const count = child.children?.length ?? 0;
-                    const label = count === 1 ? "1 Kind" : `${count} Kinder`;
-                    metaParts.push(label);
-                    entry.addClass("sm-le-structure__entry--container");
-                }
-                entry.createSpan({ cls: "sm-le-structure__meta", text: metaParts.join(" • ") });
-                entry.onclick = ev => {
-                    ev.preventDefault();
-                    this.options.onSelectElement(child.id);
-                    this.options.stage.focusElement(child);
-                };
-                entry.draggable = true;
-                entry.addClass("is-draggable");
-                entry.addEventListener("dragstart", dragEvent => {
-                    this.options.store.setDraggedElement(child.id);
-                    dragEvent.dataTransfer?.setData("text/plain", child.id);
-                    if (dragEvent.dataTransfer) {
-                        dragEvent.dataTransfer.effectAllowed = "move";
-                    }
-                });
-                entry.addEventListener("dragend", () => {
-                    this.clearDragState();
-                });
-                if (isContainerElement(child)) {
-                    const canDropHere = () => this.canDropOnContainer(child, elements);
-                    entry.addEventListener("dragenter", dragEvent => {
-                        if (!canDropHere()) return;
-                        dragEvent.preventDefault();
-                        entry.addClass("is-drop-target");
-                    });
-                    entry.addEventListener("dragover", dragEvent => {
-                        if (!canDropHere()) return;
-                        dragEvent.preventDefault();
-                        if (dragEvent.dataTransfer) {
-                            dragEvent.dataTransfer.dropEffect = "move";
-                        }
-                        entry.addClass("is-drop-target");
-                    });
-                    entry.addEventListener("dragleave", dragEvent => {
-                        const related = dragEvent.relatedTarget as HTMLElement | null;
-                        if (!related || !entry.contains(related)) {
-                            entry.removeClass("is-drop-target");
-                        }
-                    });
-                    entry.addEventListener("drop", dragEvent => {
-                        if (!canDropHere()) return;
-                        dragEvent.preventDefault();
-                        dragEvent.stopPropagation();
-                        const draggedId = this.options.store.getState().draggedElementId;
-                        if (draggedId) {
-                            this.options.store.assignElementToContainer(draggedId, child.id);
-                        }
-                        this.clearDragState();
-                    });
-                }
-                renderLevel(child.id, itemEl);
-            }
-        };
-
-        renderLevel(null, host);
-    }
-
-    private canDropOnContainer(container: LayoutElement, elements: LayoutElement[]) {
-        const draggedId = this.options.store.getState().draggedElementId;
-        if (!draggedId) return false;
-        if (!isContainerElement(container)) return false;
-        const dragged = elements.find(el => el.id === draggedId);
-        if (!dragged) return false;
-        if (dragged.id === container.id) return false;
-        if (dragged.parentId === container.id) return false;
-        if (isContainerElement(dragged)) {
-            const descendants = collectDescendantIds(dragged, elements);
-            if (descendants.has(container.id)) return false;
-        }
-        let cursor = container.parentId ? elements.find(el => el.id === container.parentId) : null;
-        while (cursor) {
-            if (cursor.id === dragged.id) return false;
-            cursor = cursor.parentId ? elements.find(el => el.id === cursor.parentId) : null;
-        }
-        return true;
-    }
-
-    private clearDragState() {
-        this.options.store.setDraggedElement(null);
-        const host = this.options.host;
-        const targets = Array.from(host.querySelectorAll<HTMLElement>(".sm-le-structure__entry.is-drop-target"));
-        for (const target of targets) {
-            target.removeClass("is-drop-target");
-        }
-        this.rootDropZone?.removeClass("is-active");
     }
 }

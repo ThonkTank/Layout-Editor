@@ -53,6 +53,12 @@ plugins/layout-editor/
    ├─ search-dropdown.ts       # Autocomplete-Helfer für Select-Elemente
    ├─ seed-layouts.ts          # Legt Standard-Layouts im Vault an (z. B. Kreaturenvorlage)
    └─ ui/
+      ├─ components/
+      │  ├─ component.ts       # Abstrakte UIComponent-Basis (Lifecycle + Listener/Observer-Cleanup)
+      │  ├─ editor-shell.ts    # Hülle für Header/Stage/Inspector inkl. Panel-Resizer
+      │  ├─ primitives.ts      # Leichtgewichtige UIComponent-Wrappers für Buttons/Felder/Stacks/Status
+      │  ├─ stage.ts           # DOM-/Pointer-Logik der Bühne als UIComponent
+      │  └─ structure-tree.ts  # Strukturbaum-Komponente inkl. Drag/Drop- und Reorder-Handling
       ├─ editor-menu.ts        # Kontextmenü für Inspector & Schnellaktionen
       └─ element-tree.ts       # Generische Baumansicht für den Element-Browser
 ```
@@ -64,15 +70,19 @@ plugins/layout-editor/
 - **Zentraler Zustand (`state/layout-editor-store.ts`)** verwaltet Canvas-Maße, Elemente, Auswahl, Drag-Zustände sowie History.
   Alle Mutationen (Elemente anlegen, Container-Layouts anwenden, Undo/Redo, Layout-Metadaten) laufen über den Store, der bei
   jeder Änderung Events an die Presenter aussendet.
+- **UI-Komponenten (`ui/components/`)** kapseln wiederkehrende DOM-Strukturen als `UIComponent`-Instanzen. Der
+  `EditorShellComponent` übernimmt Header/Stage/Inspector-Hülle samt Resizer, `StageComponent` bündelt Canvas-, Kamera- und
+  Pointer-Logik, `StructureTreeComponent` verwaltet den Baum inklusive Drag/Drop/Reorder und `primitives.ts` stellt
+  Wrapper für Buttons/Felder/Stacks bereit.
 - **Presenter-Schicht:**
-  - `stage-controller.ts` baut den Canvas inklusive Kamera auf, rendert Element-Nodes und verarbeitet Pointer-Interaktionen
-    (Move/Resize, Zoom, Pan). Änderungen schreibt er ausschließlich über Store-Methoden zurück.
-  - `structure-panel.ts` generiert den Baum, delegiert Drag & Drop an den Store und nutzt den Stage-Controller, um Elemente in
-    den Fokus zu setzen.
+  - `stage-controller.ts` orchestriert Store-Synchronisation und nutzt den `StageComponent`, um DOM und Pointer-Lifecycle
+    zentral aufzubauen.
+  - `structure-panel.ts` rendert den Strukturbaum über den `StructureTreeComponent`, meldet Drag-Zustände an den Store und
+    fokussiert Elemente auf der Bühne.
   - `header-controls.ts` zeichnet Header und Exportbereich, synchronisiert Canvas-Größen, öffnet Element-/Layout-Picker und
     orchestriert Import/Export sowie Speichern (inkl. Metadaten-Updates im Store).
 - **`view.ts` als Koordinator:** instanziiert Store und Presenter, bindet Inspector und Attribute-Popover an Store-Ereignisse,
-  reagiert auf globale Shortcuts (Delete, Undo/Redo) und hält die Panel-Resizer auf Kurs.
+  reagiert auf globale Shortcuts (Delete, Undo/Redo) und hält die Panel-Resizer über den `EditorShellComponent` auf Kurs.
 - **Inspector & Inline-Bearbeitung:** `inspector-panel.ts`, `attribute-popover.ts` und `inline-edit.ts` sorgen weiterhin dafür,
   dass Canvas, Inspector und Attribute synchron bleiben. Sie pushen Änderungen nur noch über den Store, wodurch History und
   Presenter automatisch aktualisiert werden.
@@ -118,12 +128,13 @@ plugins/layout-editor/
 - Öffnet Element- und Layout-Picker, verwaltet Canvas-Größen, Import/Export sowie Speichern inkl. Statusanzeigen.
 
 ### `presenters/stage-controller.ts`
-- Baut den Canvas samt Kamera auf, rendert Element-Nodes und synchronisiert Preview-Inhalte.
-- Verarbeitet Pointer-Interaktionen (Move, Resize, Zoom, Pan) und meldet Änderungen ausschließlich über den Store.
+- Orchestriert die Bühne, initialisiert den `StageComponent` und spiegelt Store-Änderungen in die UI.
+- Delegiert DOM-/Pointer-Logik (Move, Resize, Zoom, Pan) vollständig an den `StageComponent` und ruft ausschließlich
+  Store-Methoden auf.
 
 ### `presenters/structure-panel.ts`
-- Erzeugt den Strukturbaum, erlaubt Drag & Drop zwischen Containern und fokussiert Elemente auf der Bühne.
-- Delegiert alle Mutationen an den Store.
+- Instanziiert den `StructureTreeComponent`, reicht Store-Daten weiter und fokussiert Elemente auf der Bühne.
+- Reagiert auf `onReparent`/`onReorder`-Events, ruft passende Store-Methoden auf und synchronisiert Drag-Status.
 
 ### `view.ts`
 - Dünner Koordinator (`ItemView`): instanziiert Store + Presenter, reagiert auf Store-Events und hält Inspector/Popover aktuell.
@@ -135,10 +146,33 @@ plugins/layout-editor/
 ### `attribute-popover.ts`
 - Öffnet und positioniert das Attribut-Popover, synchronisiert Änderungen über den Store und triggert Inspector-Refresh.
 
+### `ui/components/component.ts`
+- Stellt die `UIComponent`-Basisklasse bereit (Lifecycle, Listener/Observer-Verwaltung, Host-Cleanup) und die
+  `renderComponent`-Helferfunktion.
+
+### `ui/components/editor-shell.ts`
+- Kapselt die äußere Layout-Hülle (Header, Struktur-, Stage- und Inspector-Host) und steuert Panel-Resizer.
+- Meldet Größenänderungen zurück an den View, damit Breiten persistiert werden können.
+
+### `ui/components/stage.ts`
+- Enthält die komplette DOM- und Pointer-Logik der Bühne als `UIComponent`.
+- Rendert Element-Previews, verwaltet Kamera-Transformationen und interaktive Move/Resize-Flows.
+
+### `ui/components/structure-tree.ts`
+- Zeichnet den Strukturbaum, verwaltet Drag/Drop inklusive Reparenting & Reorder und emittiert gezielte Events.
+- Nutzt den `UIComponent`-Lifecycle, um Listener sauber aufzuräumen und Drop-Indikatoren zu pflegen.
+
+### `ui/components/primitives.ts`
+- Liefert Wrapper für Buttons, Felder, Stacks und Status-Anzeigen auf Basis der bestehenden `elements/ui.ts`-Primitives.
+- Erlaubt Presenter/Komponenten, UI-Elemente mit automatischem Cleanup zu mounten.
+
 ### `layout-library.ts`, `layout-picker-modal.ts`, `name-input-modal.ts`
 - Unverändert: Speichern/Laden von Layouts, Dialog zum Auswählen vorhandener Layouts, Modal für Layout-Namen.
 
 ### `tests/layout-editor-store.test.ts`
 - Prüft `LayoutEditorStore` auf elementares Verhalten (Container-Defaults, Drag & Drop via Store, Undo/Redo, Delete).
 - Nutzt die esbuild-basierte Test-Infrastruktur (`tests/run-tests.mjs`).
+
+### `tests/ui-component.test.ts`
+- Sicherstellt, dass `UIComponent` Event-Listener beim Destroy entfernt und `renderComponent` alte Instanzen ersetzt.
 
