@@ -67,3 +67,11 @@ Layouts mit einer höheren `schemaVersion` als `LAYOUT_SCHEMA_VERSION` gelten al
 - Protokolliere Warnungen so, dass Vault-Pfad und Layout-ID nachvollziehbar bleiben.
 - Entferne alte Migrationen erst, wenn die entsprechenden Schemen offiziell nicht mehr unterstützt werden.
 
+## Navigation
+
+- [Zurück zum Docs-Index](README.md)
+- Deep-Dive-Referenzen:
+  - [Plugin-API-Referenz](../layout-editor/docs/plugin-api.md)
+  - [Layout-Bibliothek & Persistenz](../layout-editor/docs/layout-library.md)
+  - [Datenmodell-Überblick](../layout-editor/docs/data-model-overview.md)
+

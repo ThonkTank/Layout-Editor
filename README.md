@@ -67,5 +67,5 @@ Die Tests bundlen über esbuild und führen alle `*.test.ts`-Dateien in `layout-
 - [`layout-editor/docs/i18n.md`](layout-editor/docs/i18n.md) – Leitfaden für Übersetzungen, Fallback-Strategien und Pluralisierung.
 - [`layout-editor/docs/tooling.md`](layout-editor/docs/tooling.md) – Übersicht über CLI-Helfer, Tests und Automatisierungen.
 
-Fortgeschrittene Leser finden künftig im zentralen Wiki-Index eine kuratierte Sammlung sämtlicher Deep-Dives, sobald dieser veröffentlicht ist.
+Eine kuratierte Übersicht aller nutzerorientierten Artikel findest du im [Docs-Index](docs/README.md). Dieses Wurzelverzeichnis konzentriert sich auf Workflows und How-Tos, während das technische Wiki in [`layout-editor/docs/`](layout-editor/docs/) tiefgehende Architektur- und API-Details bereitstellt.
 
