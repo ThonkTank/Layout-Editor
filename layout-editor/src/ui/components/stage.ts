@@ -257,6 +257,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
                 this.options.store.applyContainerLayout(parent.id);
             }
             this.options.store.pushHistorySnapshot();
+            this.options.store.flushExport();
             onComplete();
         });
     }
@@ -328,6 +329,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
                 this.options.store.applyContainerLayout(parent.id);
             }
             this.options.store.pushHistorySnapshot();
+            this.options.store.flushExport();
             onComplete();
         });
     }

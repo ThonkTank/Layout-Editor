@@ -13,12 +13,18 @@ The component layer now renders through a lightweight diffing helper that keeps 
 - `StageComponent` keeps a keyed renderer over canvas nodes. Layout mutations pass through `DiffRenderer`, ensuring that drag/resize operations only repaint the affected element tiles instead of rebuilding the entire stage.
 - Selection state is derived inside the shared `syncElementNode` update hook, so toggling selection or dimensions does not trigger unnecessary reflows.
 - Element-specific listeners (pointer move/leave/down) register on the per-node scope. When an element disappears, its interaction listeners disappear with it, preventing leaks between sessions.
+- Drag interactions now call `LayoutEditorStore.flushExport()` once the pointer is released. During the drag, frame updates emit only `state` events, batching export payloads until the interaction settles so JSON serialization does not run on every frame.
 
 ## Structure tree component
 
 - The structure tree uses nested diff renderers: the root list and every container node get their own keyed renderer, allowing selective expansion/collapse updates without recreating sibling entries.
 - Entry metadata (title/meta spans, child list, and drag state) stays cached across updates; the diff cycle refreshes text, selection, and child counts in place.
 - Drag-and-drop feedback and drop-zone listeners are routed through component scopes so highlights and drag signals reset automatically after reorder/reparent operations.
+
+## Export payload batching
+
+- `LayoutEditorStore` memoises the last export payload and marks it dirty when state changes. Pointer-driven frame updates skip immediate serialization so drag gestures only fan out cheap `state` notifications.
+- `flushExport()` recomputes and publishes the JSON snapshot on demand. Components with long-running interactions (e.g. the stage) call it after drags/resizes complete, giving the export textarea an up-to-date view without flooding listeners during the interaction.
 
 ## Listener lifecycle
 
