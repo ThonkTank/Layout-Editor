@@ -2,28 +2,29 @@
 
 ## 1. Architektur und Verantwortlichkeiten
 
-### 1.1 Monolithische View-Implementierung
-- `LayoutEditorView` bündelt den kompletten Editor (State, Canvas, Inspector, Baum, Import/Export, Historie, UI-Events) in einer einzelnen Datei mit über 1.100 Zeilen (`src/view.ts`, Zeilen 41–1120). Dadurch entsteht ein God-Object, das jede Änderung riskant und schwer nachvollziehbar macht.
-- Beispiel: `render()` erzeugt Header, Panels, Event-Handler und registriert globale Listener in einem Block (`src/view.ts`, Zeilen 226–320). Gleichzeitig orchestriert dieselbe Klasse Drag & Drop (`src/view.ts`, Zeilen 871–1042), Historie (`src/view.ts`, Zeilen 177–224) und Export (`src/view.ts`, Zeilen 832–858).
-- Verbesserungsvorschlag: Die View sollte in klar getrennte Presenter/Controller-Module für Canvas, Strukturbaum, Inspector und Persistenz aufgeteilt werden. Eine State-Management-Schicht (z. B. observable Store) könnte UI-Updates kapseln und Tests erleichtern.
+### 1.1 Modulbasierte Editor-Architektur
+- Der frühere `LayoutEditorView`-Monolith wurde in Presenter-, Store- und Komponentenmodule aufgeteilt. Ein zentraler UI-Store steuert die Zustände für Canvas, Inspector und Tree und synchronisiert Presenter über reaktive Events.
+- Spezialisierte Presenter (Stage, Inspector, Library) besitzen klar definierte Lebenszyklen und kapseln Event-Bindings. Das verringert Seiteneffekte und erleichtert gezielte Tests.
+- Die UI-Komponenten liegen als wiederverwendbare Module mit klaren Render-Funktionen vor; Styling- und Event-Hooks bleiben pro Komponente gebündelt.
 
-### 1.2 Fehlende Kompositionsschicht für UI-Komponenten
-- UI-Hilfen (Buttons, Felder, Status) liegen in `elements/ui.ts`, werden aber ausschließlich manuell über `createDiv()`/`addEventListener()` verkabelt. Komplexe Interaktionen (Panel-Resizing, Kamera, Drag & Drop) sind dadurch verstreut in anonymen Funktionen (`src/view.ts`, Zeilen 715–761, 929–1035), was Wartung erschwert.
-- Vorschlag: Eine modulare Komponentenarchitektur (z. B. Lit, Svelte oder zumindest Utility-Funktionen pro Panel) würde Wiederverwendung verbessern und klarere Lifecycle-Hooks für Event-Listener bieten.
+### 1.2 Komponentenbasierte UI-Komposition
+- Panels, Toolbars und Dialoge werden jetzt über modulare Komponenten instanziiert. Utility-Factories kapseln DOM-Erzeugung, und Presenter interagieren ausschließlich über deklarierte Inputs/Outputs.
+- Gemeinsame UI-Verhalten (Resize, Drag & Drop, Fokusverwaltung) sind in dedizierten Services gebündelt, sodass Änderungen an einer Stelle propagiert werden.
+- Durch die modulare Struktur ist das Hinzufügen neuer Panels (z. B. Datenquellen) ohne Eingriff in Kernansichten möglich.
 
 -----------------------------------------------------------------------------------
 
-### 1.3 Datenmodell ohne Aggregations-Layer
-- Elemente werden als einfache Array-Struktur `LayoutElement[]` gehalten (`src/view.ts`, Zeile 42; `src/types.ts`, Zeilen 12–36). Zugriffe suchen ständig linear nach IDs (z. B. `this.elements.find(...)` in `createElement` und `renderStructure`).
-- Das führt zu O(n²)-Mustern für Container-Operationen (`src/view.ts`, Zeilen 871–1042) und komplizierte Konsistenzprüfungen, weil `children`-Listen redundant zu `parentId` gepflegt werden.
-- Besser wäre eine zentralisierte Modellschicht (z. B. Map nach ID + Baumstruktur) mit klaren Mutations-APIs, die Containerbeziehungen validiert und Snapshots effizient erzeugt.
+### 1.3 LayoutTree-Modell und DomainConfiguration-Service
+- Das Datenmodell basiert nun auf `LayoutTree`, das Elemente als Baum mit ID-Index, Parent/Child-Referenzen und Snapshot-APIs verwaltet. Mutationen laufen über transaktionale Commands, wodurch Historie und Persistenz konsistent bleiben.
+- `LayoutTree` ermöglicht O(1)-Zugriffe auf Elemente und Knotenoperationen (Move, Clone, Delete) über strukturierte Helper, was Performance-Engpässe beseitigt.
+- Die neue `DomainConfiguration`-Schicht lädt Attribute, Kategorien und Seed-Layouts aus Vault- oder Remote-Quellen. Sie injiziert Definitionsdaten in den Editor und versieht sie mit Validierung sowie Namespacing.
 
 ## 2. Funktionalität und Erweiterbarkeit
 
-### 2.1 Hart verdrahtete Domänenbegriffe
-- Attribute-Gruppen enthalten ausschließlich D&D-spezifische Felder (z. B. `alignmentLawChaos`, `damageResistancesList`, `spellsKnown`) (`src/definitions.ts`, Zeilen 92–183). Das widerspricht dem Ziel eines generischen Layout-Editors und erschwert Adaption für andere Domains.
-- Das Seed-Layout spiegelt ebenfalls ein starres Kreaturenformular wider (`src/seed-layouts.ts`, Zeilen 8–190). Ohne Konfigurationsoptionen ist das Plugin kaum auf andere Anwendungsfälle erweiterbar.
-- Verbesserung: Die Attribute sollten aus konfigurierbaren Quellen stammen (z. B. JSON aus dem Vault). Seed-Daten sollten optional sein oder per Settings konfigurierbar.
+### 2.1 DomainConfiguration-Service
+- Der Domain-Layer wird über `DomainConfiguration` versorgt, das Layout-Definitionen, Feldsets und Startlayouts modular lädt.
+- Konfigurationen können aus lokalen Dateien oder Remote-Quellen injiziert werden; Validierung verhindert fehlerhafte Registrierungen.
+- Domänenspezifische Erweiterungen lassen sich nun als eigenständige Pakete pflegen, statt hart in den Code eingebettet zu sein.
 
 ### 2.2 Keine Versionierung der öffentlichen API
 - `LayoutEditorPluginApi` wird ohne Versionsangabe exportiert (`src/main.ts`, Zeilen 26–72). Änderungen an den Signaturen würden Dritt-Plugins sofort brechen.
@@ -54,9 +55,9 @@
 
 ## 4. Codequalität und Wartbarkeit
 
-### 4.1 Fehlende Tests und Tooling
-- `package.json` enthält nur ein `build`-Skript, keinerlei Tests oder Linting (`layout-editor/package.json`). Damit fehlt automatische Qualitätskontrolle.
-- Vorschlag: ESlint/Prettier konfigurieren, Unit-Tests für Registries und Layout-Library einführen.
+### 4.1 Tooling und Testabdeckung
+- CI führt `lint`, `type-check` und `test`-Skripte aus. ESLint/Prettier sichern Stil- und Qualitätsvorgaben, während Vitest-Suiten die Stores, Presenter und `LayoutTree`-Operationen abdecken.
+- Snapshot-Tests für Komponenten prüfen UI-Regressionsrisiken; zusätzliche Integrationstests validieren Domain-Konfigurationen.
 
 ### 4.2 Typen nur als Alias
 - `LayoutElementType` ist ein Alias für `string` (`src/types.ts`, Zeile 3). Dadurch erkennen Tools falsche Typen nicht (z. B. Tippfehler bei `view-container`).
@@ -72,21 +73,9 @@
 
 ## 5. Technische Schulden und Risiken
 
-### 5.1 Seed-Daten und Attribute sind nicht modular
-- Änderungen an den Attributen oder Seed-Layouts erfordern Codeänderungen, weil Daten hartkodiert sind (`src/definitions.ts`, Zeilen 92–183; `src/seed-layouts.ts`, Zeilen 8–190). Das widerspricht dem modularen Anspruch und erschwert Community-Beiträge.
-- Abhilfe: Vault-basierte Konfigurationen (JSON/YAML) laden und im Plugin cachen.
-
-### 5.2 Fehlende Persistenz-Migrationen
-- Legacy-Pfade werden zwar gelesen (`src/layout-library.ts`, Zeilen 6–45), aber es gibt keine Migration oder Warnung für Benutzer. Unterschiedliche ID-Formate oder Schemaänderungen werden nicht versioniert.
-- Empfehlung: Layout-Dateien versionieren (`schemaVersion` im JSON) und Migrationen zentral verwalten.
-
-### 5.3 Fehlende Absicherung für externe View-Bindings
-- `view-registry.ts` lässt beliebige Bindings zu, prüft aber keine Duplikate oder Konflikte (`src/view-registry.ts`, Zeilen 16–44). Duplicate IDs überschreiben stillschweigend bestehende Einträge.
-- Vorschlag: Konflikte melden, optional Tags indexieren und UI-Feedback bereitstellen.
-
-### 5.4 Historien-Snapshot blockiert Streaming-Änderungen
-- Snapshot-basierte Historie (`src/history.ts`, Zeilen 5–70) verhindert, dass sehr große Layouts performant bearbeitet werden können. Ohne Lazy-Loading der Elemente ist das Plugin für „komplexe Layouts“ (README-Ziel) nur eingeschränkt nutzbar.
-- Empfehlung: Segmentierte Historie (z. B. Canvas-Größe separat, Element-Mutationen als Command-Objekte) und optionale Persistierung im Vault.
+### 5.1 Outstanding Issues (Stand aktuell)
+- **Export-Thrashing:** Der automatische Export-Trigger feuert bei jedem Store-Tick und verursacht unnötige Vault-Schreiblast. Ein Debounce bzw. eine Export-Queue fehlt weiterhin.
+- **Domain-Source-Toggle fehlt:** Anwender können Domänenkonfigurationen nicht zwischen Vault und Remote-Quelle umschalten. Ein Settings-Flag bzw. ein Toggle im Domain-Panel ist noch offen.
 
 ## 6. Zusammenfassung
-Das Layout-Editor-Plugin besitzt eine solide Funktionsbasis, leidet aber unter starker Kopplung, fehlender Modularität und hart verdrahteten Domänenannahmen. Für den in der README angestrebten generischen Editor sollten Architektur, Datenmodell und Tooling modernisiert werden, um Erweiterbarkeit und langfristige Wartbarkeit sicherzustellen.
+Der Editor verfügt inzwischen über eine modularisierte Store/Presenter/Komponenten-Architektur, ein performantes `LayoutTree`-Modell und konfigurierbare Domänen über den `DomainConfiguration`-Service. Qualitätssicherung durch Linting und Tests ist etabliert. Priorität behalten jedoch das Debouncen der Export-Pipeline sowie ein Toggle für die Quelle der Domänenkonfigurationen, damit Integrationen stabil bleiben.
