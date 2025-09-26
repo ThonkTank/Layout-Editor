@@ -10,6 +10,7 @@ import { LayoutTree } from "../model/layout-tree";
 import { collectDescendantIds } from "../utils/tree-helpers";
 import { LayoutBlueprint, LayoutEditorSnapshot, LayoutElement, LayoutElementType, SavedLayout } from "../types";
 import { cloneLayoutElement } from "../utils";
+import { stageInteractionTelemetry } from "./interaction-telemetry";
 
 type MutableLayoutEditorState = {
     canvasWidth: number;
@@ -126,15 +127,26 @@ export class LayoutEditorStore {
 
     runInteraction<T>(operation: () => T): T {
         this.interactionDepth++;
+        const depth = this.interactionDepth;
+        stageInteractionTelemetry.interactionStarted({ depth });
         try {
             return operation();
         } finally {
+            const hasPendingState = this.pendingStateEmit;
+            const skipExport = this.pendingSkipExport;
+            const willDispatchState = depth === 1 && hasPendingState;
+            stageInteractionTelemetry.interactionFinished({
+                depth,
+                hasPendingState,
+                willDispatchState,
+                skipExport,
+            });
             this.interactionDepth--;
             if (this.interactionDepth === 0 && this.pendingStateEmit) {
-                const skipExport = this.pendingSkipExport;
+                const skipExportFlag = this.pendingSkipExport;
                 this.pendingStateEmit = false;
                 this.pendingSkipExport = true;
-                this.dispatchState(skipExport ? { skipExport: true } : undefined);
+                this.dispatchState(skipExportFlag ? { skipExport: true } : undefined);
             }
         }
     }
@@ -145,8 +157,17 @@ export class LayoutEditorStore {
     }
 
     setCanvasSize(width: number, height: number) {
+        const previousWidth = this.stateRef.canvasWidth;
+        const previousHeight = this.stateRef.canvasHeight;
         const nextWidth = clamp(width, 200, 2000);
         const nextHeight = clamp(height, 200, 2000);
+        const changed = nextWidth !== previousWidth || nextHeight !== previousHeight;
+        stageInteractionTelemetry.canvasSizeEvaluated({
+            previous: { width: previousWidth, height: previousHeight },
+            requested: { width, height },
+            result: { width: nextWidth, height: nextHeight },
+            changed,
+        });
         if (nextWidth === this.stateRef.canvasWidth && nextHeight === this.stateRef.canvasHeight) {
             return;
         }
@@ -671,6 +692,7 @@ export class LayoutEditorStore {
     private clampElementsToCanvas() {
         const elements = this.tree.getElementsSnapshot();
         for (const element of elements) {
+            const previousFrame = { x: element.x, y: element.y, width: element.width, height: element.height };
             const maxX = Math.max(0, this.stateRef.canvasWidth - element.width);
             const maxY = Math.max(0, this.stateRef.canvasHeight - element.height);
             element.x = clamp(element.x, 0, maxX);
@@ -679,6 +701,19 @@ export class LayoutEditorStore {
             const maxHeight = Math.max(MIN_ELEMENT_SIZE, this.stateRef.canvasHeight - element.y);
             element.width = clamp(element.width, MIN_ELEMENT_SIZE, maxWidth);
             element.height = clamp(element.height, MIN_ELEMENT_SIZE, maxHeight);
+            if (
+                previousFrame.x !== element.x ||
+                previousFrame.y !== element.y ||
+                previousFrame.width !== element.width ||
+                previousFrame.height !== element.height
+            ) {
+                stageInteractionTelemetry.clampStepObserved({
+                    elementId: element.id,
+                    previous: previousFrame,
+                    result: { x: element.x, y: element.y, width: element.width, height: element.height },
+                    canvas: { width: this.stateRef.canvasWidth, height: this.stateRef.canvasHeight },
+                });
+            }
         }
         for (const element of elements) {
             if (isContainerType(element.type)) {
