@@ -21,6 +21,7 @@ import {
 import type { LayoutBlueprint, LayoutElementDefinition, LayoutElementType } from "./types";
 import { LAYOUT_EDITOR_CSS } from "./css";
 import { ensureSeedLayouts } from "./seed-layouts";
+import { registerLayoutEditorSettingsTab } from "./settings/settings-tab";
 
 export const LAYOUT_EDITOR_API_VERSION = "1.0.0";
 
@@ -128,6 +129,8 @@ export default class LayoutEditorPlugin extends Plugin {
             name: "Layout Editor öffnen",
             callback: () => this.openView(),
         });
+
+        registerLayoutEditorSettingsTab(this);
 
         this.injectCss();
 

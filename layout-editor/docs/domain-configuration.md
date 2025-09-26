@@ -6,18 +6,23 @@ Validierungsregeln der Konfiguration sowie die notwendigen Schritte zur Aktivier
 
 ## Quellen auswählen
 
-1. Öffne die Plugin-Einstellungen des Layout Editors.
-2. Aktiviere unter **Domänenquelle** den Toggle, um vom Modus „Builtin“ auf „Vault“ zu
-   wechseln. Ohne Aktivierung bleiben die ursprünglichen Daten erhalten.
-3. Beim Umschalten wird die Domänenkonfiguration automatisch neu geladen und sowohl die
-   Element-Definitionen als auch die Seed-Layouts aktualisiert.
+1. Öffne die **Einstellungen** von Obsidian und navigiere zu **Community Plugins → Layout Editor**.
+2. Wähle den Reiter **Layout Editor**. Dort findest du den Toggle **Domänenquelle**.
+3. Schalte den Toggle auf den gewünschten Modus:
+   - **Builtin** lädt die mit dem Plugin ausgelieferten Attributgruppen, Element-Definitionen und Seed-Layouts.
+   - **Vault** lädt alle Bereiche aus deiner Vault-Datei `Layout Editor/domain-config.json` (siehe unten).
+4. Beim Umschalten wird die Domänenkonfiguration automatisch neu geladen und sowohl die Element-Definitionen
+   als auch die Seed-Layouts aktualisiert.
 
-Die Auswahl wird in `localStorage` des Clients gesichert, sodass der zuletzt verwendete Modus
-beim nächsten Start wiederhergestellt wird.
+Die Auswahl wird über `localStorage` pro Client gesichert, sodass der zuletzt verwendete Modus beim nächsten Start wiederhergestellt wird.
 
 ## Ablageort und Struktur der JSON-Datei
 
 * Dateipfad: `Layout Editor/domain-config.json` (relativ zum Vault-Stamm).
+* Voraussetzungen für den Vault-Modus:
+  - Die Datei muss existieren und valides JSON enthalten.
+  - Der Vault benötigt Schreib-/Leserechte für den Ordner `Layout Editor`.
+  - Änderungen an der Datei erfordern ein erneutes Laden des Toggles oder einen Neustart des Plugins, damit sie übernommen werden.
 * Erwartete Wurzelstruktur:
 
 ```json
