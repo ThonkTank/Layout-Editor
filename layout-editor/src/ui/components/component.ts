@@ -4,6 +4,17 @@ export type UIComponentHost<T extends HTMLElement = HTMLElement> = T & {
     [HOST_COMPONENT_KEY]?: UIComponent<T>;
 };
 
+export interface UIComponentScope {
+    listen(
+        target: EventTarget,
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+    ): () => void;
+    register(cleanup: () => void): void;
+    dispose(): void;
+}
+
 export abstract class UIComponent<T extends HTMLElement = HTMLElement> {
     private cleanups: Array<() => void> = [];
     private mountedHost: UIComponentHost<T> | null = null;
@@ -50,6 +61,36 @@ export abstract class UIComponent<T extends HTMLElement = HTMLElement> {
 
     protected registerCleanup(cleanup: () => void): void {
         this.cleanups.push(cleanup);
+    }
+
+    protected createScope(): UIComponentScope {
+        const ownedCleanups: Array<() => void> = [];
+        let disposed = false;
+        const dispose = () => {
+            if (disposed) return;
+            disposed = true;
+            while (ownedCleanups.length) {
+                const cleanup = ownedCleanups.pop()!;
+                try {
+                    cleanup();
+                } catch (error) {
+                    console.error("UIComponent scope cleanup failed", error);
+                }
+            }
+        };
+
+        return {
+            listen: (target, type, listener, options) => {
+                const cleanup = this.listen(target, type, listener, options);
+                ownedCleanups.push(cleanup);
+                return cleanup;
+            },
+            register: cleanup => {
+                this.registerCleanup(cleanup);
+                ownedCleanups.push(cleanup);
+            },
+            dispose,
+        };
     }
 
     protected listen(

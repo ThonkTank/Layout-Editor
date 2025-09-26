@@ -1,0 +1,28 @@
+# UI Rendering Pipeline
+
+The component layer now renders through a lightweight diffing helper that keeps DOM mutations scoped to the elements that actually changed. This section captures the important pieces so future updates stay aligned with the incremental architecture.
+
+## Diff-driven updates
+
+- `DiffRenderer` accepts a host container, a key extractor, and lifecycle hooks (`create`, `update`, `destroy`).
+- Each rendered node receives a scoped cleanup handle created through `UIComponent.createScope()`. Event listeners and other transient resources should be registered on that scope so they are released automatically when the node leaves the tree.
+- During `patch`, the helper reuses existing nodes when their key matches, moves them into the correct order, applies the `update` hook, and only creates/removes nodes for new or deleted keys. Removed nodes run `destroy`, dispose their scope, and are then detached from the DOM.
+
+## Stage component
+
+- `StageComponent` keeps a keyed renderer over canvas nodes. Layout mutations pass through `DiffRenderer`, ensuring that drag/resize operations only repaint the affected element tiles instead of rebuilding the entire stage.
+- Selection state is derived inside the shared `syncElementNode` update hook, so toggling selection or dimensions does not trigger unnecessary reflows.
+- Element-specific listeners (pointer move/leave/down) register on the per-node scope. When an element disappears, its interaction listeners disappear with it, preventing leaks between sessions.
+
+## Structure tree component
+
+- The structure tree uses nested diff renderers: the root list and every container node get their own keyed renderer, allowing selective expansion/collapse updates without recreating sibling entries.
+- Entry metadata (title/meta spans, child list, and drag state) stays cached across updates; the diff cycle refreshes text, selection, and child counts in place.
+- Drag-and-drop feedback and drop-zone listeners are routed through component scopes so highlights and drag signals reset automatically after reorder/reparent operations.
+
+## Listener lifecycle
+
+- `UIComponent.createScope()` centralises cleanup. Always register DOM listeners or observers for dynamic nodes on the provided scope. Global interactions (e.g. `window` pointer tracking) remain on the component-level cleanup stack and are explicitly torn down by the interaction handlers.
+- Tests assert that removing a node tears down its scope-bound listeners, providing a regression guard against future leaks.
+
+Keeping these rules in mind ensures the rendering layer remains incremental, predictable, and cheap to update even for large documents.

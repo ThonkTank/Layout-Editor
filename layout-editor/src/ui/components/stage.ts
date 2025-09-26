@@ -3,7 +3,8 @@ import { renderElementPreview } from "../../element-preview";
 import { LayoutEditorStore } from "../../state/layout-editor-store";
 import { LayoutElement } from "../../types";
 import { clamp, isContainerElement } from "../../utils";
-import { UIComponent } from "./component";
+import { UIComponent, UIComponentScope } from "./component";
+import { DiffRenderer } from "./diff-renderer";
 
 export interface StageComponentOptions {
     store: LayoutEditorStore;
@@ -16,6 +17,7 @@ interface InteractionCleanup {
 
 export class StageComponent extends UIComponent<HTMLElement> {
     private readonly elementNodes = new Map<string, HTMLElement>();
+    private elementsRenderer: DiffRenderer<LayoutElement, HTMLElement> | null = null;
     private canvasEl!: HTMLElement;
     private viewportEl!: HTMLElement;
     private cameraPanEl!: HTMLElement;
@@ -24,6 +26,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
     private cameraScale = 1;
     private cameraX = 0;
     private cameraY = 0;
+    private selectedElementId: string | null = null;
     private panPointerId: number | null = null;
     private panStartX = 0;
     private panStartY = 0;
@@ -59,9 +62,27 @@ export class StageComponent extends UIComponent<HTMLElement> {
         this.cameraZoomEl = cameraZoom;
         this.canvasEl = canvas;
         this.hasInitializedCamera = false;
+
+        this.elementsRenderer = new DiffRenderer<LayoutElement, HTMLElement>(
+            this.canvasEl,
+            () => this.createScope(),
+            {
+                getKey: element => element.id,
+                create: (element, context) => this.createElementNode(element, context.scope),
+                update: (node, element) => this.syncElementNode(node, element),
+                destroy: node => {
+                    const id = node.dataset.id;
+                    if (id) {
+                        this.elementNodes.delete(id);
+                    }
+                },
+            },
+        );
     }
 
     protected onDestroy(): void {
+        this.elementsRenderer?.clear();
+        this.elementsRenderer = null;
         this.elementNodes.clear();
         this.clearHost();
     }
@@ -70,28 +91,8 @@ export class StageComponent extends UIComponent<HTMLElement> {
         if (!this.canvasEl) return;
         this.canvasEl.style.width = `${canvasWidth}px`;
         this.canvasEl.style.height = `${canvasHeight}px`;
-
-        const seen = new Set<string>();
-        for (const element of elements) {
-            seen.add(element.id);
-            let node = this.elementNodes.get(element.id);
-            if (!node) {
-                node = this.createElementNode(element);
-                this.elementNodes.set(element.id, node);
-            }
-            this.syncElementNode(node, element);
-        }
-
-        for (const [id, node] of this.elementNodes.entries()) {
-            if (!seen.has(id)) {
-                node.remove();
-                this.elementNodes.delete(id);
-            }
-        }
-
-        for (const [id, node] of this.elementNodes) {
-            node.classList.toggle("is-selected", id === selectedId);
-        }
+        this.selectedElementId = selectedId;
+        this.elementsRenderer?.patch(elements);
 
         if (!this.hasInitializedCamera) {
             requestAnimationFrame(() => {
@@ -121,7 +122,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
         this.applyCameraTransform();
     }
 
-    private createElementNode(element: LayoutElement) {
+    private createElementNode(element: LayoutElement, scope: UIComponentScope) {
         const node = this.canvasEl.createDiv({ cls: "sm-le-box" });
         node.dataset.id = element.id;
 
@@ -142,17 +143,17 @@ export class StageComponent extends UIComponent<HTMLElement> {
             }
         };
 
-        this.listen(node, "pointermove", ev => {
+        scope.listen(node, "pointermove", ev => {
             if (ev.buttons) return;
             updateCursor(ev as PointerEvent);
         });
 
-        this.listen(node, "pointerleave", () => {
+        scope.listen(node, "pointerleave", () => {
             if (node.hasClass("is-interacting")) return;
             node.style.cursor = "";
         });
 
-        this.listen(node, "pointerdown", ev => {
+        scope.listen(node, "pointerdown", ev => {
             const event = ev as PointerEvent;
             this.options.onSelectElement?.(element.id);
             const mode = this.resolveInteractionMode(node, event);
@@ -171,6 +172,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
             }
         });
 
+        this.elementNodes.set(element.id, node);
         return node;
     }
 
@@ -180,6 +182,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
         node.style.width = `${Math.round(element.width)}px`;
         node.style.height = `${Math.round(element.height)}px`;
         node.classList.toggle("is-container", isContainerType(element.type));
+        node.classList.toggle("is-selected", element.id === this.selectedElementId);
         const contentEl = node.querySelector<HTMLElement>('[data-role="content"]');
         if (contentEl) {
             renderElementPreview({
