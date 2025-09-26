@@ -10,6 +10,7 @@ In diesem Ordner liegen alle automatisierten Tests für den Layout-Editor. Die D
 - [`layout-editor-store.test.ts`](layout-editor-store.test.ts) – Deckt Store-Reducer, Aktionen und Selektoren ab.
 - [`layout-tree.test.ts`](layout-tree.test.ts) – Testet den Layout-Baum und Kind-Verknüpfungen.
 - [`persistence-errors.test.ts`](persistence-errors.test.ts) – Überwacht Fehlerszenarien und Banner-Anzeigen.
+- [`stage-component.test.ts`](stage-component.test.ts) – Simuliert Stage-Drags mit mehreren Elementen und prüft Cursor-Caches sowie gebatchte Store-Updates.
 - [`ui-component.test.ts`](ui-component.test.ts) – Fokus auf UIComponent-Lebenszyklus, Listener und Cleanup.
 - [`ui-diff-renderer.test.ts`](ui-diff-renderer.test.ts) – Prüft DiffRenderer-Verhalten bei Reordering und Entfernen.
 - [`view-registry.test.ts`](view-registry.test.ts) – Validiert Registrierungs-/Deregistrierungs-Guards.
@@ -29,4 +30,3 @@ In diesem Ordner liegen alle automatisierten Tests für den Layout-Editor. Die D
 ## To-Do
 
 - Tests prüfen, dass Store-Snapshots außerhalb des Stores nicht mutierbar sind. Neue Cases gehören in `layout-editor-store.test.ts` und `history-limits.test.ts`.
-- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../todo/stage-pointer-performance.md) – UI-Tests sollen Pointer-Cursor-Strategien und Performance-Schutzmechanismen prüfen.

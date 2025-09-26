@@ -17,12 +17,9 @@ Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Can
 - **DiffRenderer**: Beim Einsatz von `DiffRenderer` muss `getKey` stabil bleiben; `destroy` sollte `scope.dispose()` für Kind-Komponenten aufrufen.
 - **CSS**: Komponenten erzeugen ausschließlich Klassen mit Präfix `sm-le-`. Zusätzliche Styles werden in `src/css.ts` registriert.
 - **Tests**: Änderungen an Stage, StructureTree oder DiffRenderer erfordern Begleit-Updates in `../../tests/ui-component.test.ts`, `../../tests/ui-diff-renderer.test.ts` sowie Performance-Messungen laut [`../../docs/ui-performance.md`](../../docs/ui-performance.md).
+- **Stage-Cursor**: Stage-Pointer-Interaktionen laufen über Snapshot-Caches und `store.runInteraction()`. Neue Pointer-Handler dürfen keine direkten `store.getState()`-Scans pro Frame hinzufügen.
 
 ## Weiterführende Dokumentation
 - Canvas- und Rendering-Details: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
 - Architektur des `src`-Moduls: [`../../README.md`](../../README.md)
 - Projektweiter Kontext: [`../../../README.md`](../../../README.md)
-
-## To-Do
-
-- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../../todo/stage-pointer-performance.md) – Stage benötigt Cursor-basierte Lookups und entkoppelte Mutationen, um Frame-Jank zu vermeiden.

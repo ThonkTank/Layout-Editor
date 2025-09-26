@@ -58,7 +58,6 @@ Die Tests bundlen über esbuild und führen alle `*.test.ts`-Dateien in `layout-
 
 ## To-Do
 
-- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](todo/stage-pointer-performance.md) – Pointer-Handler benötigen Caches oder Cursor, um Frame-Jank zu vermeiden.
 
 ## Weiterführende Dokumentation
 
