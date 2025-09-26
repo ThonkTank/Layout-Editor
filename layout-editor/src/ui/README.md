@@ -21,5 +21,8 @@ Dieser Ordner enthält die UI-Hilfsfunktionen des Layout-Editors – insbesonder
 ## Weiterführende Dokumentation
 - Architektur-Überblick: [`../README.md`](../README.md)
 - Performance-Guidelines für UI-Widgets: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
-- Bekannte Optimierungsbedarfe rund um Stage-Interaktionen: [`../../../todo/layout-store-consistency.md`](../../../todo/layout-store-consistency.md)
 - Projektweite Einordnung & Workflows: [`../../../README.md`](../../../README.md)
+
+## To-Do
+
+- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../../todo/stage-pointer-performance.md) – Pointer-Handler benötigen Caches/Cursor, um Frame-Jank und doppelte Mutationen zu vermeiden.

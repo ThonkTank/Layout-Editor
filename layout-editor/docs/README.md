@@ -17,7 +17,10 @@ related background material.
 | [Localization Guidelines](./i18n.md) | Shows how locale bundles are structured, overridden, and injected into presenters. | You add new UI strings, support additional locales, or test localisation behaviour. |
 | [Tooling](./tooling.md) | Lists linting, formatting, and test commands that enforce repository quality. | You prepare contributions or verify CI-equivalent checks locally. |
 
-Active follow-up work for the store/history stack is tracked in [`../../todo/layout-store-consistency.md`](../../todo/layout-store-consistency.md) and linked from the relevant module READMEs.
+## To-Do
+
+- [Layout-Store liefert mutierbare Snapshots](../../todo/layout-store-immutable-snapshots.md) – Dokumentation muss aktualisiert werden, sobald der Store unveränderliche Snapshots ausliefert.
+- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../todo/stage-pointer-performance.md) – UI-Performance-Guides sollen Cursor-basierte Interaktionen beschreiben.
 
 For a high-level, user-facing overview of workflows and features, refer to the root
 [`docs/`](../../docs/) directory.

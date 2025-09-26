@@ -56,9 +56,10 @@ Durch Tests (`tests/api-versioning.test.ts`) wird sichergestellt, dass Legacy-La
 
 Die Tests bundlen über esbuild und führen alle `*.test.ts`-Dateien in `layout-editor/tests` aus.
 
-## Offene Aufgaben
+## To-Do
 
-- [Layout-Store garantiert keine Seiteneffekte](todo/layout-store-consistency.md) – Tracking für die geplante Umstellung auf unveränderliche Snapshots und schnellere Stage-Cursor.
+- [Layout-Store liefert mutierbare Snapshots](todo/layout-store-immutable-snapshots.md) – Store muss unveränderliche Snapshots bereitstellen, damit Undo/Redo stabil bleibt.
+- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](todo/stage-pointer-performance.md) – Pointer-Handler benötigen Caches oder Cursor, um Frame-Jank zu vermeiden.
 
 ## Weiterführende Dokumentation
 

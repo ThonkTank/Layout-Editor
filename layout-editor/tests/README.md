@@ -24,5 +24,9 @@ In diesem Ordner liegen alle automatisierten Tests für den Layout-Editor. Die D
 ## Weiterführende Dokumentation
 - Tooling- und Runner-Details: [`../docs/tooling.md`](../docs/tooling.md)
 - Architektur-Kontext der Module: [`../src/README.md`](../src/README.md)
-- Bekannte Lücken in Store/History-Tests: [`../../todo/layout-store-consistency.md`](../../todo/layout-store-consistency.md)
 - Projektweite Nutzung & Workflows: [`../../README.md`](../../README.md)
+
+## To-Do
+
+- [Layout-Store liefert mutierbare Snapshots](../../todo/layout-store-immutable-snapshots.md) – Test-Suite muss neue Snapshot-Garantien und Race-Conditions abdecken.
+- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../todo/stage-pointer-performance.md) – UI-Tests sollen Pointer-Cursor-Strategien und Performance-Schutzmechanismen prüfen.
