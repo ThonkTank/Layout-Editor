@@ -21,5 +21,8 @@ Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Can
 ## Weiterführende Dokumentation
 - Canvas- und Rendering-Details: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
 - Architektur des `src`-Moduls: [`../../README.md`](../../README.md)
-- Offene Performance-Optimierungen für Stage & StructureTree: [`../../../todo/layout-store-consistency.md`](../../../todo/layout-store-consistency.md)
 - Projektweiter Kontext: [`../../../README.md`](../../../README.md)
+
+## To-Do
+
+- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../../todo/stage-pointer-performance.md) – Stage benötigt Cursor-basierte Lookups und entkoppelte Mutationen, um Frame-Jank zu vermeiden.

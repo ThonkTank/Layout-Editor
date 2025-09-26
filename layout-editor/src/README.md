@@ -29,7 +29,6 @@ Der `src/`-Ordner enthält den TypeScript-Quellcode des Layout Editors. Er ist n
 
 - [`state/`](state) – Kapselt den zentralen Store.
   - [`layout-editor-store.ts`](state/layout-editor-store.ts) – Verwaltet Canvas, Elemente, Auswahl, Drag- und History-State und emittiert Änderungsereignisse.
-  - **Offene Aufgabe:** Der Store gibt derzeit veränderliche Referenzen aus und ermöglicht damit Seiteneffekte außerhalb des Stores. Details und Lösungsansätze stehen im To-Do [`../../todo/layout-store-consistency.md`](../../todo/layout-store-consistency.md).
 
 Weiterführende Details zum Datenmodell und zur Store-Architektur findest du in [`../docs/data-model-overview.md`](../docs/data-model-overview.md) und [`../docs/history-design.md`](../docs/history-design.md).
 
@@ -86,3 +85,7 @@ Die Test-Suite für Store- und UI-Verhalten liegt eine Ebene höher unter [`../t
 4. Registrierungen (`definitions.ts`, `view-registry.ts`) und die Layout-Bibliothek (`layout-library.ts`) speisen neue Daten zurück in den Store.
 
 Weitere Architekturentscheidungen sind im Wurzel-README sowie in [`../docs/history-design.md`](../docs/history-design.md) dokumentiert.
+
+## To-Do
+
+- [Layout-Store liefert mutierbare Snapshots](../../todo/layout-store-immutable-snapshots.md) – Store-API muss unveränderliche oder proxied Snapshots liefern, damit Undo/Redo und Presenter keine Seiteneffekte verursachen.
