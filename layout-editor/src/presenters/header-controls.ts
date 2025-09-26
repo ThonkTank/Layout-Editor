@@ -1,5 +1,5 @@
 // src/presenters/header-controls.ts
-import { Notice, App } from "obsidian";
+import type { App, Notice as ObsidianNotice } from "obsidian";
 import {
     createElementsButton,
     createElementsField,
@@ -16,6 +16,165 @@ import { listSavedLayouts, loadSavedLayout, saveLayoutToLibrary } from "../layou
 import { NameInputModal } from "../name-input-modal";
 import { LayoutPickerModal } from "../layout-picker-modal";
 import { getElementTypeLabel } from "../definitions";
+import { renderComponent } from "../ui/components/component";
+import { StatusBannerComponent, type StatusBannerState } from "../ui/components/status-banner";
+
+export interface LayoutPersistenceErrorViewModel extends StatusBannerState {
+    code: string;
+    noticeMessage: string;
+}
+
+const PERSISTENCE_CODE_MAP: Record<string, { title: string; description: string; help?: string; notice?: string }> = {
+    "layout/id-invalid": {
+        title: "Ungültige Layout-ID",
+        description: "Der gespeicherte Name kann nicht verwendet werden. Wähle einen anderen Namen ohne Sonderpfade.",
+        help: "Vermeide reservierte Namen wie '.' oder '..'.",
+    },
+    "layout/id-invalid-characters": {
+        title: "Layout-ID enthält unerlaubte Zeichen",
+        description: "Die Layout-ID darf keine Schrägstriche enthalten. Bitte entferne '/' oder '\\' aus dem Namen.",
+    },
+    "layout/canvas-width-invalid": {
+        title: "Breite der Arbeitsfläche ist ungültig",
+        description: "Die gespeicherte Breite muss eine positive Zahl sein.",
+        help: "Passe die Breite im Eingabefeld an (200–2000 px).",
+    },
+    "layout/canvas-height-invalid": {
+        title: "Höhe der Arbeitsfläche ist ungültig",
+        description: "Die gespeicherte Höhe muss eine positive Zahl sein.",
+        help: "Passe die Höhe im Eingabefeld an (200–2000 px).",
+    },
+    "layout/elements-empty": {
+        title: "Keine Layout-Elemente",
+        description: "Das Layout enthält keine gültigen Elemente und kann daher nicht gespeichert werden.",
+        help: "Füge mindestens ein Element hinzu oder lade ein gespeichertes Layout.",
+    },
+    "layout/elements-invalid": {
+        title: "Elemente enthalten ungültige Werte",
+        description: "Mindestens ein Element besitzt ungültige Eigenschaften und wurde vom Speichern ausgeschlossen.",
+        help: "Prüfe neu hinzugefügte Elemente oder importierte Daten auf vollständige Angaben.",
+    },
+    "layout/unknown": {
+        title: "Speichern fehlgeschlagen",
+        description: "Das Layout konnte nicht gespeichert werden. Details findest du unten.",
+        notice: "Layout konnte nicht gespeichert werden",
+    },
+};
+
+const PERSISTENCE_MESSAGE_CODES: Array<{ match: RegExp; code: keyof typeof PERSISTENCE_CODE_MAP }> = [
+    { match: /Layout-ID darf keine Pfadtrenner enthalten\.?$/i, code: "layout/id-invalid-characters" },
+    { match: /Layout-ID ist ungültig\.?$/i, code: "layout/id-invalid" },
+    { match: /Ungültige Breite für das Layout\.?$/i, code: "layout/canvas-width-invalid" },
+    { match: /Ungültige Höhe für das Layout\.?$/i, code: "layout/canvas-height-invalid" },
+    { match: /Layout enthält keine gültigen Elemente\.?$/i, code: "layout/elements-empty" },
+    {
+        match: /Mindestens ein Layout-Element enthält ungültige Werte und konnte nicht gespeichert werden\.?$/i,
+        code: "layout/elements-invalid",
+    },
+];
+
+export function describeLayoutPersistenceError(error: unknown): LayoutPersistenceErrorViewModel {
+    const normalized = normalizePersistenceError(error);
+    const code = resolvePersistenceErrorCode(normalized);
+    const mapping = PERSISTENCE_CODE_MAP[code] ?? PERSISTENCE_CODE_MAP["layout/unknown"];
+    const noticeMessage = mapping.notice ?? mapping.title;
+    const details = createPersistenceDetails(code, normalized.message, mapping.help);
+    return {
+        tone: "danger",
+        title: mapping.title,
+        description: mapping.description,
+        details,
+        code,
+        noticeMessage,
+    };
+}
+
+interface NormalizedPersistenceError {
+    code?: string;
+    message?: string;
+}
+
+function normalizePersistenceError(error: unknown): NormalizedPersistenceError {
+    if (!error) {
+        return {};
+    }
+    if (typeof error === "string") {
+        return { message: error };
+    }
+    if (error instanceof Error) {
+        const code = typeof (error as any).code === "string" ? (error as any).code : undefined;
+        return { code, message: error.message };
+    }
+    if (typeof error === "object") {
+        const code = typeof (error as { code?: string }).code === "string" ? (error as { code?: string }).code : undefined;
+        const message = typeof (error as { message?: unknown }).message === "string" ? (error as { message?: unknown }).message : undefined;
+        return { code, message };
+    }
+    return { message: String(error) };
+}
+
+function resolvePersistenceErrorCode(error: NormalizedPersistenceError): keyof typeof PERSISTENCE_CODE_MAP {
+    if (error.code && error.code in PERSISTENCE_CODE_MAP) {
+        return error.code as keyof typeof PERSISTENCE_CODE_MAP;
+    }
+    const message = error.message?.trim();
+    if (message) {
+        for (const candidate of PERSISTENCE_MESSAGE_CODES) {
+            if (candidate.match.test(message)) {
+                return candidate.code;
+            }
+        }
+    }
+    return "layout/unknown";
+}
+
+function createPersistenceDetails(
+    code: keyof typeof PERSISTENCE_CODE_MAP,
+    rawMessage: string | undefined,
+    help: string | undefined,
+): StatusBannerState["details"] {
+    const details = [] as NonNullable<StatusBannerState["details"]>;
+    details.push({ label: "Fehlercode", text: code });
+    if (help) {
+        details.push({ label: "Empfehlung", text: help });
+    }
+    if (rawMessage && !PERSISTENCE_MESSAGE_CODES.some(entry => entry.code === code && entry.match.test(rawMessage))) {
+        details.push({ label: "Rohmeldung", text: rawMessage });
+    }
+    return details;
+}
+
+type NoticeConstructor = new (message: string, timeout?: number) => ObsidianNotice;
+
+let cachedNoticeCtor: NoticeConstructor | null = null;
+
+function resolveNoticeConstructor(): NoticeConstructor | null {
+    if (cachedNoticeCtor) {
+        return cachedNoticeCtor;
+    }
+    const requireFn = (globalThis as { require?: (id: string) => unknown }).require;
+    if (typeof requireFn === "function") {
+        try {
+            const mod = requireFn("obsidian") as { Notice?: NoticeConstructor };
+            if (mod && typeof mod.Notice === "function") {
+                cachedNoticeCtor = mod.Notice;
+                return cachedNoticeCtor;
+            }
+        } catch (error) {
+            console.warn("Could not load Obsidian Notice constructor", error);
+        }
+    }
+    return null;
+}
+
+function showNotice(message: string) {
+    const ctor = resolveNoticeConstructor();
+    if (ctor) {
+        new ctor(message);
+    } else {
+        console.warn("Notice:", message);
+    }
+}
 
 interface HeaderControlsOptions {
     host: HTMLElement;
@@ -31,10 +190,13 @@ export class HeaderControlsPresenter {
     private widthInput?: HTMLInputElement;
     private heightInput?: HTMLInputElement;
     private statusEl?: HTMLElement;
+    private persistenceBannerHost?: HTMLElement;
+    private persistenceBanner?: StatusBannerComponent;
     private exportEl?: HTMLTextAreaElement;
     private importBtn?: HTMLButtonElement;
     private saveButton?: HTMLButtonElement;
     private unsubscribe: (() => void) | null = null;
+    private lastPersistenceError: LayoutPersistenceErrorViewModel | null = null;
 
     constructor(private readonly options: HeaderControlsOptions) {
         this.store = options.store;
@@ -46,6 +208,8 @@ export class HeaderControlsPresenter {
     dispose() {
         this.unsubscribe?.();
         this.unsubscribe = null;
+        this.persistenceBanner?.destroy();
+        this.persistenceBanner = undefined;
     }
 
     setElementDefinitions(definitions: LayoutElementDefinition[]) {
@@ -105,6 +269,12 @@ export class HeaderControlsPresenter {
         this.statusEl = createElementsStatus(header, { text: "" });
         this.statusEl.addClass("sm-le-status");
 
+        this.persistenceBannerHost = header.createDiv({ cls: "sm-le-header__banner" });
+        this.persistenceBanner = renderComponent(
+            this.persistenceBannerHost,
+            new StatusBannerComponent(this.lastPersistenceError),
+        );
+
         const exportWrap = host.createDiv({ cls: "sm-le-export" });
         exportWrap.createEl("h3", { text: "Layout-Daten" });
         const exportControls = exportWrap.createDiv({ cls: "sm-le-export__controls" });
@@ -151,6 +321,12 @@ export class HeaderControlsPresenter {
             }
             this.statusEl.setText(parts.join(" · "));
         }
+        if (this.lastPersistenceError && state.isSavingLayout) {
+            // keep banner visible while saving to avoid flicker
+        } else if (this.lastPersistenceError && !state.isSavingLayout) {
+            // clear banner once saving has completed after an error was resolved externally
+            this.clearPersistenceError();
+        }
     }
 
     private renderAddElementControl() {
@@ -164,7 +340,7 @@ export class HeaderControlsPresenter {
 
     private openElementPicker() {
         if (!this.definitions.length) {
-            new Notice("Keine Elementtypen registriert.");
+            showNotice("Keine Elementtypen registriert.");
             return;
         }
         const modal = new ElementPickerModal(this.app, {
@@ -191,14 +367,14 @@ export class HeaderControlsPresenter {
         try {
             const layout = await loadSavedLayout(this.app, layoutId);
             if (!layout) {
-                new Notice("Layout konnte nicht geladen werden");
+                showNotice("Layout konnte nicht geladen werden");
                 return;
             }
             this.store.applySavedLayout(layout);
-            new Notice(`Layout „${layout.name}” geladen`);
+            showNotice(`Layout „${layout.name}” geladen`);
         } catch (error) {
             console.error("Failed to import saved layout", error);
-            new Notice("Konnte Layout nicht laden");
+            showNotice("Konnte Layout nicht laden");
         } finally {
             this.store.setImportingLayout(false);
         }
@@ -224,7 +400,7 @@ export class HeaderControlsPresenter {
     private async saveLayout(name: string) {
         const trimmed = name.trim();
         if (!trimmed) {
-            new Notice("Bitte gib einen Namen für das Layout an");
+            showNotice("Bitte gib einen Namen für das Layout an");
             return;
         }
         if (this.store.getState().isSavingLayout) return;
@@ -240,11 +416,13 @@ export class HeaderControlsPresenter {
                 elements: state.elements.map(cloneLayoutElement),
             });
             this.store.updateSavedLayoutMetadata(saved);
-            new Notice(`Layout „${saved.name}” gespeichert`);
+            this.clearPersistenceError();
+            showNotice(`Layout „${saved.name}” gespeichert`);
         } catch (error) {
             console.error("Failed to save layout", error);
-            const message = error instanceof Error && error.message ? error.message : "Konnte Layout nicht speichern";
-            new Notice(message);
+            const persistenceError = describeLayoutPersistenceError(error);
+            this.showPersistenceError(persistenceError);
+            showNotice(persistenceError.noticeMessage);
         } finally {
             this.store.setSavingLayout(false);
         }
@@ -258,10 +436,27 @@ export class HeaderControlsPresenter {
                 throw new Error("Clipboard API nicht verfügbar");
             }
             await clip.writeText(this.exportEl.value);
-            new Notice("Layout kopiert");
+            showNotice("Layout kopiert");
         } catch (error) {
             console.error("Clipboard write failed", error);
-            new Notice("Konnte nicht in die Zwischenablage kopieren");
+            showNotice("Konnte nicht in die Zwischenablage kopieren");
         }
+    }
+
+    private showPersistenceError(error: LayoutPersistenceErrorViewModel) {
+        this.lastPersistenceError = error;
+        if (!this.persistenceBanner && this.persistenceBannerHost) {
+            this.persistenceBanner = renderComponent(
+                this.persistenceBannerHost,
+                new StatusBannerComponent(error),
+            );
+            return;
+        }
+        this.persistenceBanner?.setState(error);
+    }
+
+    private clearPersistenceError() {
+        this.lastPersistenceError = null;
+        this.persistenceBanner?.setState(null);
     }
 }
