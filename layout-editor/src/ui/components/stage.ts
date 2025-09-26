@@ -199,10 +199,12 @@ export class StageComponent extends UIComponent<HTMLElement> {
     }
 
     private finalizeInlineMutation(element: LayoutElement) {
+        this.options.store.applyElementSnapshot(element, { skipExport: true });
         if (isContainerType(element.type)) {
             this.options.store.applyContainerLayout(element.id, { silent: true });
         }
         this.options.store.pushHistorySnapshot();
+        this.options.store.flushExport();
     }
 
     private beginMove(element: LayoutElement, event: PointerEvent, onComplete: InteractionCleanup) {
@@ -212,36 +214,18 @@ export class StageComponent extends UIComponent<HTMLElement> {
         const originY = element.y;
         const isContainer = isContainerType(element.type);
         const parent = element.parentId ? this.options.store.getState().elements.find(el => el.id === element.parentId) : null;
-        const childOrigins = isContainer
-            ? element.children?.map(id => {
-                  const child = this.options.store.getState().elements.find(el => el.id === id);
-                  return child ? { child, x: child.x, y: child.y } : null;
-              }) ?? []
-            : [];
 
         const onMove = (ev: PointerEvent) => {
             const dx = ev.clientX - startX;
             const dy = ev.clientY - startY;
             let nextX = originX + dx;
             let nextY = originY + dy;
-            const maxX = Math.max(0, this.options.store.getState().canvasWidth - element.width);
-            const maxY = Math.max(0, this.options.store.getState().canvasHeight - element.height);
+            const canvasState = this.options.store.getState();
+            const maxX = Math.max(0, canvasState.canvasWidth - element.width);
+            const maxY = Math.max(0, canvasState.canvasHeight - element.height);
             nextX = clamp(nextX, 0, maxX);
             nextY = clamp(nextY, 0, maxY);
-            this.options.store.updateElementFrame(element.id, { x: nextX, y: nextY });
-            if (isContainer) {
-                const offsetX = element.x - originX;
-                const offsetY = element.y - originY;
-                for (const entry of childOrigins) {
-                    if (!entry) continue;
-                    entry.child.x = entry.x + offsetX;
-                    entry.child.y = entry.y + offsetY;
-                    this.options.store.updateElementFrame(entry.child.id, {
-                        x: entry.child.x,
-                        y: entry.child.y,
-                    });
-                }
-            }
+            this.options.store.moveElement(element.id, { x: nextX, y: nextY }, { skipExport: true });
             if (parent && isContainerElement(parent)) {
                 this.options.store.applyContainerLayout(parent.id, { silent: true });
             }
@@ -305,12 +289,12 @@ export class StageComponent extends UIComponent<HTMLElement> {
                 nextH = clamp(originH + dy, MIN_ELEMENT_SIZE, maxHeight);
             }
 
-            this.options.store.updateElementFrame(element.id, {
-                x: nextX,
-                y: nextY,
-                width: nextW,
-                height: nextH,
-            });
+            this.options.store.moveElement(
+                element.id,
+                { x: nextX, y: nextY },
+                { skipExport: true, cascadeChildren: false },
+            );
+            this.options.store.resizeElement(element.id, { width: nextW, height: nextH }, { skipExport: true });
 
             if (isContainer) {
                 this.options.store.applyContainerLayout(element.id, { silent: true });

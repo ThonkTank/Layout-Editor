@@ -28,5 +28,5 @@ In diesem Ordner liegen alle automatisierten Tests für den Layout-Editor. Die D
 
 ## To-Do
 
-- [Layout-Store liefert mutierbare Snapshots](../../todo/layout-store-immutable-snapshots.md) – Test-Suite muss neue Snapshot-Garantien und Race-Conditions abdecken.
+- Tests prüfen, dass Store-Snapshots außerhalb des Stores nicht mutierbar sind. Neue Cases gehören in `layout-editor-store.test.ts` und `history-limits.test.ts`.
 - [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../todo/stage-pointer-performance.md) – UI-Tests sollen Pointer-Cursor-Strategien und Performance-Schutzmechanismen prüfen.

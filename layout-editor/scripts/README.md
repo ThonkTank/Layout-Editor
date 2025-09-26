@@ -19,4 +19,4 @@ Die Skripte automatisieren Build-, Test- und Generierungsaufgaben für den Layou
 
 ## To-Do
 
-- [Layout-Store liefert mutierbare Snapshots](../../todo/layout-store-immutable-snapshots.md) – Skripte/Tests benötigen aktualisierte Erwartungen, sobald der Store unveränderliche Snapshots liefert.
+- Store-Snapshots werden tief geklont; CLI-Skripte und Tests müssen Änderungen über Store-Befehle anstoßen statt direkte Objektmutation zu erwarten.

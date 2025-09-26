@@ -88,4 +88,4 @@ Weitere Architekturentscheidungen sind im Wurzel-README sowie in [`../docs/histo
 
 ## To-Do
 
-- [Layout-Store liefert mutierbare Snapshots](../../todo/layout-store-immutable-snapshots.md) – Store-API muss unveränderliche oder proxied Snapshots liefern, damit Undo/Redo und Presenter keine Seiteneffekte verursachen.
+- `LayoutEditorStore` liefert tief geklonte Snapshots. UI-Schichten dürfen Objekte als Draft verwenden, müssen Änderungen aber über Befehle wie `moveElement`, `resizeElement`, `offsetChildren` oder `applyElementSnapshot` zurückspielen.

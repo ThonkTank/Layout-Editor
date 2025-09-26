@@ -55,6 +55,12 @@ Wenn ein Layout eine ältere Version besitzt, für die keine Migration definiert
 
 Layouts mit einer höheren `schemaVersion` als `LAYOUT_SCHEMA_VERSION` gelten als inkompatibel. Sie werden nicht geladen, damit keine fehlerhaften Daten verarbeitet werden. Ein entsprechender Warnhinweis wird ausgegeben.
 
+## Store-Snapshot-Verhalten
+
+- `LayoutEditorStore.getState()` sowie `state`-Events geben nur noch tief geklonte Snapshots zurück. Änderungen an den gelieferten Objekten haben keine Seiteneffekte mehr.
+- UI-Schichten müssen Layout-Anpassungen deshalb über Befehle wie `moveElement`, `resizeElement`, `offsetChildren` oder `applyElementSnapshot` zurück an den Store delegieren.
+- Undo/Redo bleibt deterministisch, weil die History ausschließlich mit Store-internen Snapshots arbeitet; externe Mutationen gehen verloren, bis sie über die genannten Befehle gemeldet werden.
+
 ## Tests & Qualitätssicherung
 
 - `tests/api-versioning.test.ts` enthält Regressionstests für API-Helfer und Migrationen.

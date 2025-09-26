@@ -11,6 +11,45 @@ import { collectDescendantIds } from "../utils/tree-helpers";
 import { LayoutBlueprint, LayoutEditorSnapshot, LayoutElement, LayoutElementType, SavedLayout } from "../types";
 import { cloneLayoutElement } from "../utils";
 
+type MutableLayoutEditorState = {
+    canvasWidth: number;
+    canvasHeight: number;
+    selectedElementId: string | null;
+    draggedElementId: string | null;
+    isSavingLayout: boolean;
+    isImportingLayout: boolean;
+    lastSavedLayoutId: string | null;
+    lastSavedLayoutName: string;
+    lastSavedLayoutCreatedAt: string | null;
+    lastSavedLayoutUpdatedAt: string | null;
+    canUndo: boolean;
+    canRedo: boolean;
+};
+
+interface MutationOptions {
+    skipExport?: boolean;
+}
+
+interface StatePatchOptions extends MutationOptions {
+    skipEmit?: boolean;
+}
+
+interface MoveElementOptions extends MutationOptions {
+    cascadeChildren?: boolean;
+}
+
+interface ElementSnapshotPatch {
+    label?: string;
+    description?: string | undefined;
+    placeholder?: string | undefined;
+    defaultValue?: string | undefined;
+    options?: string[] | undefined;
+    attributes?: string[];
+    layout?: LayoutElement["layout"];
+    viewBindingId?: string | undefined;
+    viewState?: Record<string, unknown> | undefined;
+}
+
 export interface LayoutEditorState {
     readonly canvasWidth: number;
     readonly canvasHeight: number;
@@ -44,10 +83,9 @@ export class LayoutEditorStore {
     private readonly tree = new LayoutTree();
     private exportPayload = "";
     private exportDirty = true;
-    private state: LayoutEditorState = {
+    private readonly stateRef: MutableLayoutEditorState = {
         canvasWidth: 800,
         canvasHeight: 600,
-        elements: [],
         selectedElementId: null,
         draggedElementId: null,
         isSavingLayout: false,
@@ -72,7 +110,7 @@ export class LayoutEditorStore {
 
     subscribe(listener: (event: LayoutEditorStoreEvent) => void) {
         this.listeners.add(listener);
-        listener({ type: "state", state: this.state });
+        listener({ type: "state", state: this.createSnapshot() });
         listener({ type: "export", payload: this.ensureExportPayload() });
         return () => {
             this.listeners.delete(listener);
@@ -80,22 +118,23 @@ export class LayoutEditorStore {
     }
 
     getState(): LayoutEditorState {
-        return this.state;
+        return this.createSnapshot();
     }
 
     selectElement(id: string | null) {
-        if (this.state.selectedElementId === id) return;
+        if (this.stateRef.selectedElementId === id) return;
         this.patchState({ selectedElementId: id });
     }
 
     setCanvasSize(width: number, height: number) {
         const nextWidth = clamp(width, 200, 2000);
         const nextHeight = clamp(height, 200, 2000);
-        if (nextWidth === this.state.canvasWidth && nextHeight === this.state.canvasHeight) {
+        if (nextWidth === this.stateRef.canvasWidth && nextHeight === this.stateRef.canvasHeight) {
             return;
         }
-        this.state.canvasWidth = nextWidth;
-        this.state.canvasHeight = nextHeight;
+        this.stateRef.canvasWidth = nextWidth;
+        this.stateRef.canvasHeight = nextHeight;
+        this.markStateMutated();
         this.clampElementsToCanvas();
         this.emitState();
         this.commitHistory();
@@ -103,13 +142,13 @@ export class LayoutEditorStore {
 
     createElement(type: LayoutElementType, options?: CreateElementOptions) {
         const def = getElementDefinition(type);
-        const width = def ? def.width : Math.min(240, Math.max(160, Math.round(this.state.canvasWidth * 0.25)));
-        const height = def ? def.height : Math.min(160, Math.max(120, Math.round(this.state.canvasHeight * 0.25)));
+        const width = def ? def.width : Math.min(240, Math.max(160, Math.round(this.stateRef.canvasWidth * 0.25)));
+        const height = def ? def.height : Math.min(160, Math.max(120, Math.round(this.stateRef.canvasHeight * 0.25)));
         const element: LayoutElement = {
             id: generateElementId(),
             type,
-            x: Math.max(0, Math.round((this.state.canvasWidth - width) / 2)),
-            y: Math.max(0, Math.round((this.state.canvasHeight - height) / 2)),
+            x: Math.max(0, Math.round((this.stateRef.canvasWidth - width) / 2)),
+            y: Math.max(0, Math.round((this.stateRef.canvasHeight - height) / 2)),
             width,
             height,
             label: def?.defaultLabel ?? type,
@@ -136,7 +175,8 @@ export class LayoutEditorStore {
         }
 
         this.tree.insert(element, { parentId: parentContainer?.id ?? null });
-        this.patchState({ selectedElementId: element.id });
+        this.markStateMutated();
+        this.patchState({ selectedElementId: element.id }, { skipEmit: true });
 
         if (parentContainer) {
             this.applyContainerLayout(parentContainer.id);
@@ -152,8 +192,9 @@ export class LayoutEditorStore {
         if (!element) return;
         const parentId = element.parentId ?? null;
         this.tree.remove(id);
-        const nextSelected = this.state.selectedElementId === id ? null : this.state.selectedElementId;
-        this.patchState({ selectedElementId: nextSelected });
+        const nextSelected = this.stateRef.selectedElementId === id ? null : this.stateRef.selectedElementId;
+        this.markStateMutated();
+        this.patchState({ selectedElementId: nextSelected }, { skipEmit: true });
         if (parentId) {
             this.applyContainerLayout(parentId);
         } else {
@@ -186,6 +227,8 @@ export class LayoutEditorStore {
             return;
         }
 
+        this.markStateMutated();
+
         if (currentParentId && currentParentId !== nextParentId) {
             this.applyContainerLayout(currentParentId, { silent: true });
         }
@@ -202,12 +245,13 @@ export class LayoutEditorStore {
     moveChildInContainer(containerId: string, childId: string, offset: number) {
         const moved = this.tree.moveChild(containerId, childId, offset);
         if (!moved) return;
+        this.markStateMutated();
         this.applyContainerLayout(containerId);
         this.commitHistory();
     }
 
     setDraggedElement(id: string | null) {
-        if (this.state.draggedElementId === id) return;
+        if (this.stateRef.draggedElementId === id) return;
         this.patchState({ draggedElementId: id });
     }
 
@@ -225,6 +269,7 @@ export class LayoutEditorStore {
             changed = true;
         }
         if (changed) {
+            this.markStateMutated();
             this.emitState({ skipExport: true });
         }
     }
@@ -297,43 +342,117 @@ export class LayoutEditorStore {
             }
         }
 
+        this.markStateMutated();
         if (!options?.silent) {
             this.emitState();
         }
     }
 
-    updateElementFrame(elementId: string, frame: Partial<Pick<LayoutElement, "x" | "y" | "width" | "height">>) {
+    moveElement(elementId: string, position: Partial<Pick<LayoutElement, "x" | "y">>, options?: MoveElementOptions) {
+        if (typeof position.x !== "number" && typeof position.y !== "number") return;
         const element = this.tree.getElement(elementId);
         if (!element) return;
-        let changed = false;
-        if (typeof frame.x === "number" && frame.x !== element.x) {
-            element.x = frame.x;
-            changed = true;
+        const maxX = Math.max(0, this.stateRef.canvasWidth - element.width);
+        const maxY = Math.max(0, this.stateRef.canvasHeight - element.height);
+        const nextX = typeof position.x === "number" ? clamp(position.x, 0, maxX) : element.x;
+        const nextY = typeof position.y === "number" ? clamp(position.y, 0, maxY) : element.y;
+        const deltaX = nextX - element.x;
+        const deltaY = nextY - element.y;
+        if (!deltaX && !deltaY) return;
+        this.tree.update(elementId, current => {
+            current.x = nextX;
+            current.y = nextY;
+        });
+        if (options?.cascadeChildren ?? true) {
+            this.offsetChildrenInternal(elementId, deltaX, deltaY);
         }
-        if (typeof frame.y === "number" && frame.y !== element.y) {
-            element.y = frame.y;
-            changed = true;
+        this.markStateMutated();
+        this.emitState(options);
+    }
+
+    resizeElement(
+        elementId: string,
+        size: Partial<Pick<LayoutElement, "width" | "height">>,
+        options?: MutationOptions,
+    ) {
+        if (typeof size.width !== "number" && typeof size.height !== "number") return;
+        const element = this.tree.getElement(elementId);
+        if (!element) return;
+        const maxWidth = Math.max(MIN_ELEMENT_SIZE, this.stateRef.canvasWidth - element.x);
+        const maxHeight = Math.max(MIN_ELEMENT_SIZE, this.stateRef.canvasHeight - element.y);
+        const nextWidth = typeof size.width === "number" ? clamp(size.width, MIN_ELEMENT_SIZE, maxWidth) : element.width;
+        const nextHeight =
+            typeof size.height === "number" ? clamp(size.height, MIN_ELEMENT_SIZE, maxHeight) : element.height;
+        if (nextWidth === element.width && nextHeight === element.height) return;
+        this.tree.update(elementId, current => {
+            current.width = nextWidth;
+            current.height = nextHeight;
+        });
+        this.markStateMutated();
+        this.emitState(options);
+    }
+
+    offsetChildren(parentId: string, offset: { x?: number; y?: number }, options?: MutationOptions) {
+        const offsetX = offset.x ?? 0;
+        const offsetY = offset.y ?? 0;
+        const changed = this.offsetChildrenInternal(parentId, offsetX, offsetY);
+        if (!changed) return;
+        this.markStateMutated();
+        this.emitState(options);
+    }
+
+    applyElementSnapshot(snapshot: LayoutElement, options?: MutationOptions) {
+        const current = this.tree.getElement(snapshot.id);
+        if (!current) return;
+        const patch = this.diffElementSnapshot(current, snapshot);
+        if (!patch) return;
+        let requiresLayoutReflow = false;
+        this.tree.update(snapshot.id, element => {
+            if (Object.prototype.hasOwnProperty.call(patch, "label")) {
+                element.label = patch.label ?? "";
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "description")) {
+                element.description = patch.description;
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "placeholder")) {
+                element.placeholder = patch.placeholder;
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "defaultValue")) {
+                element.defaultValue = patch.defaultValue;
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "options")) {
+                element.options = patch.options ? [...patch.options] : undefined;
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "attributes")) {
+                element.attributes = patch.attributes ? [...patch.attributes] : [];
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "layout")) {
+                element.layout = patch.layout ? { ...patch.layout } : undefined;
+                requiresLayoutReflow = true;
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "viewBindingId")) {
+                element.viewBindingId = patch.viewBindingId;
+            }
+            if (Object.prototype.hasOwnProperty.call(patch, "viewState")) {
+                element.viewState = patch.viewState ? cloneRecord(patch.viewState) : undefined;
+            }
+        });
+        this.markStateMutated();
+        if (requiresLayoutReflow && isContainerType(current.type)) {
+            this.applyContainerLayout(snapshot.id, { silent: true });
         }
-        if (typeof frame.width === "number" && frame.width !== element.width) {
-            element.width = frame.width;
-            changed = true;
-        }
-        if (typeof frame.height === "number" && frame.height !== element.height) {
-            element.height = frame.height;
-            changed = true;
-        }
-        if (changed) {
-            this.emitState({ skipExport: true });
-        }
+        this.emitState(options);
     }
 
     undo() {
         this.history.undo();
+        this.markStateMutated();
         this.emitState();
     }
 
     redo() {
         this.history.redo();
+        this.markStateMutated();
         this.emitState();
     }
 
@@ -343,42 +462,42 @@ export class LayoutEditorStore {
 
     applySavedLayout(layout: SavedLayout) {
         this.tree.load(layout.elements);
-        this.patchState({
-            canvasWidth: layout.canvasWidth,
-            canvasHeight: layout.canvasHeight,
-            selectedElementId: null,
-            lastSavedLayoutId: layout.id,
-            lastSavedLayoutName: layout.name,
-            lastSavedLayoutCreatedAt: layout.createdAt,
-            lastSavedLayoutUpdatedAt: layout.updatedAt,
-        });
+        this.stateRef.canvasWidth = layout.canvasWidth;
+        this.stateRef.canvasHeight = layout.canvasHeight;
+        this.stateRef.selectedElementId = null;
+        this.stateRef.lastSavedLayoutId = layout.id;
+        this.stateRef.lastSavedLayoutName = layout.name;
+        this.stateRef.lastSavedLayoutCreatedAt = layout.createdAt;
+        this.stateRef.lastSavedLayoutUpdatedAt = layout.updatedAt;
+        this.markStateMutated();
         this.history.reset(this.captureSnapshot());
         this.emitState();
     }
 
     serializeState(): string {
+        const elements = this.tree.getElementsSnapshot().map(element => {
+            const clone = cloneLayoutElement(element);
+            return {
+                ...clone,
+                x: Math.round(clone.x),
+                y: Math.round(clone.y),
+                width: Math.round(clone.width),
+                height: Math.round(clone.height),
+            };
+        });
         const payload: LayoutBlueprint & {
             id: string | null;
             name: string | null;
             createdAt: string | null;
             updatedAt: string | null;
         } = {
-            canvasWidth: Math.round(this.state.canvasWidth),
-            canvasHeight: Math.round(this.state.canvasHeight),
-            elements: this.state.elements.map(element => {
-                const clone = cloneLayoutElement(element);
-                return {
-                    ...clone,
-                    x: Math.round(clone.x),
-                    y: Math.round(clone.y),
-                    width: Math.round(clone.width),
-                    height: Math.round(clone.height),
-                };
-            }),
-            id: this.state.lastSavedLayoutId,
-            name: this.state.lastSavedLayoutName.trim() ? this.state.lastSavedLayoutName : null,
-            createdAt: this.state.lastSavedLayoutCreatedAt,
-            updatedAt: this.state.lastSavedLayoutUpdatedAt ?? this.state.lastSavedLayoutCreatedAt,
+            canvasWidth: Math.round(this.stateRef.canvasWidth),
+            canvasHeight: Math.round(this.stateRef.canvasHeight),
+            elements,
+            id: this.stateRef.lastSavedLayoutId,
+            name: this.stateRef.lastSavedLayoutName.trim() ? this.stateRef.lastSavedLayoutName : null,
+            createdAt: this.stateRef.lastSavedLayoutCreatedAt,
+            updatedAt: this.stateRef.lastSavedLayoutUpdatedAt ?? this.stateRef.lastSavedLayoutCreatedAt,
         };
         return JSON.stringify(payload, null, 2);
     }
@@ -401,31 +520,31 @@ export class LayoutEditorStore {
     }
 
     setSavingLayout(isSaving: boolean) {
-        if (this.state.isSavingLayout === isSaving) return;
+        if (this.stateRef.isSavingLayout === isSaving) return;
         this.patchState({ isSavingLayout: isSaving });
     }
 
     setImportingLayout(isImporting: boolean) {
-        if (this.state.isImportingLayout === isImporting) return;
+        if (this.stateRef.isImportingLayout === isImporting) return;
         this.patchState({ isImportingLayout: isImporting });
     }
 
     private captureSnapshot(): LayoutEditorSnapshot {
         return {
-            canvasWidth: this.state.canvasWidth,
-            canvasHeight: this.state.canvasHeight,
-            selectedElementId: this.state.selectedElementId,
+            canvasWidth: this.stateRef.canvasWidth,
+            canvasHeight: this.stateRef.canvasHeight,
+            selectedElementId: this.stateRef.selectedElementId,
             elements: this.tree.getElementsSnapshot().map(cloneLayoutElement),
         };
     }
 
     private restoreSnapshot(snapshot: LayoutEditorSnapshot) {
         this.tree.load(snapshot.elements);
-        this.patchState({
-            canvasWidth: snapshot.canvasWidth,
-            canvasHeight: snapshot.canvasHeight,
-            selectedElementId: snapshot.selectedElementId,
-        });
+        this.stateRef.canvasWidth = snapshot.canvasWidth;
+        this.stateRef.canvasHeight = snapshot.canvasHeight;
+        this.stateRef.selectedElementId = snapshot.selectedElementId;
+        this.markStateMutated();
+        this.emitState();
     }
 
     private resolveParentContainer(requestedParentId: string | null): LayoutElement | null {
@@ -435,8 +554,8 @@ export class LayoutEditorStore {
                 return candidate;
             }
         }
-        if (this.state.selectedElementId) {
-            const selected = this.tree.getElement(this.state.selectedElementId);
+        if (this.stateRef.selectedElementId) {
+            const selected = this.tree.getElement(this.stateRef.selectedElementId);
             if (selected && isContainerType(selected.type)) {
                 return selected;
             }
@@ -452,23 +571,11 @@ export class LayoutEditorStore {
         }
     }
 
-    private emitState(options?: { skipExport?: boolean }) {
-        this.patchState({}, options);
-    }
-
-    private patchState(patch: Partial<LayoutEditorState>, options?: { skipExport?: boolean }) {
-        const elements = this.tree.getElementsSnapshot();
-        this.state = {
-            ...this.state,
-            ...patch,
-            elements,
-            canUndo: this.history.canUndo,
-            canRedo: this.history.canRedo,
-        };
-        this.exportDirty = true;
+    private emitState(options?: MutationOptions) {
+        this.updateDerivedFlags();
         const listeners = Array.from(this.listeners);
         for (const listener of listeners) {
-            listener({ type: "state", state: this.state });
+            listener({ type: "state", state: this.createSnapshot() });
         }
         if (!options?.skipExport) {
             const payload = this.ensureExportPayload();
@@ -478,21 +585,69 @@ export class LayoutEditorStore {
         }
     }
 
+    private patchState(patch: Partial<MutableLayoutEditorState>, options?: StatePatchOptions) {
+        let changed = false;
+        for (const key of Object.keys(patch) as (keyof MutableLayoutEditorState)[]) {
+            const value = patch[key];
+            if (typeof value === "undefined") continue;
+            if (this.stateRef[key] !== value) {
+                this.stateRef[key] = value as MutableLayoutEditorState[typeof key];
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.markStateMutated();
+        }
+        if (!options?.skipEmit) {
+            const emitOptions: MutationOptions | undefined = options?.skipExport ? { skipExport: true } : undefined;
+            this.emitState(emitOptions);
+        }
+    }
+
+    private markStateMutated() {
+        this.exportDirty = true;
+    }
+
+    private updateDerivedFlags() {
+        this.stateRef.canUndo = this.history.canUndo;
+        this.stateRef.canRedo = this.history.canRedo;
+    }
+
+    private createSnapshot(): LayoutEditorState {
+        const elements = this.tree.getElementsSnapshot().map(cloneLayoutElement);
+        return {
+            canvasWidth: this.stateRef.canvasWidth,
+            canvasHeight: this.stateRef.canvasHeight,
+            elements,
+            selectedElementId: this.stateRef.selectedElementId,
+            draggedElementId: this.stateRef.draggedElementId,
+            isSavingLayout: this.stateRef.isSavingLayout,
+            isImportingLayout: this.stateRef.isImportingLayout,
+            lastSavedLayoutId: this.stateRef.lastSavedLayoutId,
+            lastSavedLayoutName: this.stateRef.lastSavedLayoutName,
+            lastSavedLayoutCreatedAt: this.stateRef.lastSavedLayoutCreatedAt,
+            lastSavedLayoutUpdatedAt: this.stateRef.lastSavedLayoutUpdatedAt,
+            canUndo: this.history.canUndo,
+            canRedo: this.history.canRedo,
+        };
+    }
+
     private commitHistory() {
         if (this.history.isRestoring) return;
         this.history.push(this.captureSnapshot());
+        this.markStateMutated();
         this.emitState();
     }
 
     private clampElementsToCanvas() {
         const elements = this.tree.getElementsSnapshot();
         for (const element of elements) {
-            const maxX = Math.max(0, this.state.canvasWidth - element.width);
-            const maxY = Math.max(0, this.state.canvasHeight - element.height);
+            const maxX = Math.max(0, this.stateRef.canvasWidth - element.width);
+            const maxY = Math.max(0, this.stateRef.canvasHeight - element.height);
             element.x = clamp(element.x, 0, maxX);
             element.y = clamp(element.y, 0, maxY);
-            const maxWidth = Math.max(MIN_ELEMENT_SIZE, this.state.canvasWidth - element.x);
-            const maxHeight = Math.max(MIN_ELEMENT_SIZE, this.state.canvasHeight - element.y);
+            const maxWidth = Math.max(MIN_ELEMENT_SIZE, this.stateRef.canvasWidth - element.x);
+            const maxHeight = Math.max(MIN_ELEMENT_SIZE, this.stateRef.canvasHeight - element.y);
             element.width = clamp(element.width, MIN_ELEMENT_SIZE, maxWidth);
             element.height = clamp(element.height, MIN_ELEMENT_SIZE, maxHeight);
         }
@@ -502,6 +657,70 @@ export class LayoutEditorStore {
             }
         }
     }
+
+    private offsetChildrenInternal(parentId: string, offsetX: number, offsetY: number): boolean {
+        if (!offsetX && !offsetY) return false;
+        const children = this.tree.getChildElements(parentId);
+        if (!children.length) return false;
+        let changed = false;
+        for (const child of children) {
+            const nextX = child.x + offsetX;
+            const nextY = child.y + offsetY;
+            if (nextX !== child.x) {
+                child.x = nextX;
+                changed = true;
+            }
+            if (nextY !== child.y) {
+                child.y = nextY;
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private diffElementSnapshot(current: LayoutElement, snapshot: LayoutElement): ElementSnapshotPatch | null {
+        let changed = false;
+        const patch: ElementSnapshotPatch = {};
+        if (snapshot.label !== current.label) {
+            patch.label = snapshot.label;
+            changed = true;
+        }
+        if ((snapshot.description ?? undefined) !== (current.description ?? undefined)) {
+            patch.description = snapshot.description;
+            changed = true;
+        }
+        if ((snapshot.placeholder ?? undefined) !== (current.placeholder ?? undefined)) {
+            patch.placeholder = snapshot.placeholder;
+            changed = true;
+        }
+        if ((snapshot.defaultValue ?? undefined) !== (current.defaultValue ?? undefined)) {
+            patch.defaultValue = snapshot.defaultValue;
+            changed = true;
+        }
+        if (!arraysEqual(snapshot.options, current.options)) {
+            patch.options = snapshot.options ? [...snapshot.options] : undefined;
+            changed = true;
+        }
+        if (!arraysEqual(snapshot.attributes, current.attributes)) {
+            patch.attributes = snapshot.attributes ? [...snapshot.attributes] : [];
+            changed = true;
+        }
+        const snapshotLayout = snapshot.layout ? { ...snapshot.layout } : undefined;
+        const currentLayout = current.layout ? { ...current.layout } : undefined;
+        if (!shallowEqual(snapshotLayout, currentLayout)) {
+            patch.layout = snapshot.layout ? { ...snapshot.layout } : undefined;
+            changed = true;
+        }
+        if ((snapshot.viewBindingId ?? undefined) !== (current.viewBindingId ?? undefined)) {
+            patch.viewBindingId = snapshot.viewBindingId;
+            changed = true;
+        }
+        if (!shallowEqual(snapshot.viewState, current.viewState)) {
+            patch.viewState = snapshot.viewState ? cloneRecord(snapshot.viewState) : undefined;
+            changed = true;
+        }
+        return changed ? patch : null;
+    }
 }
 
 function generateElementId() {
@@ -510,4 +729,40 @@ function generateElementId() {
 
 function clamp(value: number, min: number, max: number) {
     return Math.min(max, Math.max(min, value));
+}
+
+function arraysEqual<T>(a: readonly T[] | undefined, b: readonly T[] | undefined): boolean {
+    const arrA = a ?? [];
+    const arrB = b ?? [];
+    if (arrA.length !== arrB.length) return false;
+    for (let i = 0; i < arrA.length; i++) {
+        if (arrA[i] !== arrB[i]) return false;
+    }
+    return true;
+}
+
+function shallowEqual(
+    a: Record<string, unknown> | undefined,
+    b: Record<string, unknown> | undefined,
+): boolean {
+    if (a === b) return true;
+    if (!a || !b) return !a && !b;
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+        if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+        const valA = a[key];
+        const valB = b[key];
+        if (Array.isArray(valA) && Array.isArray(valB)) {
+            if (!arraysEqual(valA, valB)) return false;
+            continue;
+        }
+        if (valA !== valB) return false;
+    }
+    return true;
+}
+
+function cloneRecord<T extends Record<string, unknown>>(value: T): T {
+    return JSON.parse(JSON.stringify(value)) as T;
 }

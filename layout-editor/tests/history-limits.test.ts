@@ -64,11 +64,20 @@ async function testHistoryCapAndRedoIntegrity() {
     assert.equal(current.elements[0]?.label, "Label 5", "undo should stop at bounded baseline");
     assert.equal(history.canUndo, false, "history should not allow undo past retained window");
 
+    current.elements[0]!.label = "Mutated outside history";
+    current.elements.push({
+        ...ELEMENT_TEMPLATE,
+        id: "temp",
+        label: "Temp",
+        attributes: [],
+    });
+
     for (let i = 0; i < 60; i++) {
         history.redo();
     }
 
     assert.equal(current.elements[0]?.label, "Label 55", "redo should reach latest snapshot after pruning");
+    assert.equal(current.elements.length, 1, "redo should ignore external snapshot mutations");
     assert.equal(history.canRedo, false, "redo should be exhausted after reaching latest state");
 }
 

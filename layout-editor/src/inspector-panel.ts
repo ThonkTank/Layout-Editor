@@ -605,9 +605,9 @@ function finalizeElementChange(
     options?: { rerender?: boolean },
 ) {
     callbacks.syncElementElement(element);
-    callbacks.refreshExport();
     callbacks.updateStatus();
     callbacks.pushHistory();
+    callbacks.refreshExport();
     if (options?.rerender) {
         callbacks.renderInspector();
     }

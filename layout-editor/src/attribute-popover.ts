@@ -52,11 +52,11 @@ export class AttributePopoverController {
             if (element.attributes.length === 0) return;
             element.attributes = [];
             this.callbacks.syncElementElement(element);
+            this.callbacks.updateStatus();
+            this.callbacks.pushHistory();
             this.callbacks.refreshExport();
             this.callbacks.renderInspector();
             this.refresh();
-            this.callbacks.updateStatus();
-            this.callbacks.pushHistory();
         });
         container.appendChild(clearBtn);
 
@@ -83,11 +83,11 @@ export class AttributePopoverController {
                         element.attributes = element.attributes.filter(v => v !== option.value);
                     }
                     this.callbacks.syncElementElement(element);
+                    this.callbacks.updateStatus();
+                    this.callbacks.pushHistory();
                     this.callbacks.refreshExport();
                     this.callbacks.renderInspector();
                     this.refresh();
-                    this.callbacks.updateStatus();
-                    this.callbacks.pushHistory();
                 });
                 const labelText = document.createElement("span");
                 labelText.textContent = option.label;
