@@ -34,6 +34,39 @@ Diese Analyse dokumentiert den aktuellen Pointer-Move- und Resize-Flow innerhalb
 - Gibt es Container-Layouts, deren `align`-Einstellungen die horizontale Verschiebung einzelner Kinder erlauben, oder ist jeglicher Drag bei Kindern grundsätzlich chancenlos? Hier fehlt ein Matrix-Test über alle Container-Typen.
 - Sind Export-Listener oder nachgelagerte Tools (`flushExport`) verantwortlich für ein externes Reset (z. B. Server-ACK, das den State neu lädt)? Eventuelle Race-Conditions zwischen Export und lokalem Snapshot müssen untersucht werden.
 
+## Ergebnisse: Container-Relayout-Matrix
+
+Eine neue Testsuite deckt sämtliche Container-Typen (`box`, `vbox`, `hbox`) über alle Align-Varianten und zwei Stage-Viewport-Größen hinweg ab. Für jede Kombination wird ein Drag-Frame und ein Resize-Frame simuliert; dabei erfasst die Suite sowohl die durch den Interaktionsversuch gesetzten Offsets als auch die unmittelbar anschließenden Relayout-Ergebnisse. Die Assertions zeigen, dass `applyContainerLayout` jeden Versuch sofort auf die Baseline-Koordinaten und -Dimensionen zurücksetzt – sowohl während des `runInteraction`-Rahmens (silent) als auch nach dem finalen Commit.【F:layout-editor/tests/container-relayout.test.ts†L24-L127】【F:layout-editor/tests/helpers/container-fixtures.ts†L7-L212】
+
+Die gemessenen Baselines und Versuchswerte sind in der folgenden Matrix zusammengefasst. In der Spalte „Drag Versuch“ ist der vom Test angeforderte Zieloffset dargestellt; die Spalte „Resize Versuch“ zeigt die Zielbreiten/-höhen. In allen Fällen fällt das tatsächliche Ergebnis nach dem Relayout wieder auf die Baseline (siehe Tests), womit der in der Hypothesenliste vermutete harte Reset bestätigt ist.【1b6aec†L1-L30】
+
+| Stage | Container | Align | Baseline x/y | Drag Versuch x/y | Resize Versuch w/h |
+|-------|-----------|-------|--------------|-------------------|--------------------|
+| 640×480 | box-container | start | 156/146 | 204/182 | 332×140 |
+| 640×480 | box-container | center | 190/146 | 238/182 | 332×140 |
+| 640×480 | box-container | end | 224/146 | 272/182 | 332×140 |
+| 640×480 | box-container | stretch | 156/146 | 204/182 | 400×140 |
+| 640×480 | vbox-container | start | 166/126 | 214/162 | 332×160 |
+| 640×480 | vbox-container | center | 190/126 | 238/162 | 332×160 |
+| 640×480 | vbox-container | end | 214/126 | 262/162 | 332×160 |
+| 640×480 | vbox-container | stretch | 166/126 | 214/162 | 380×160 |
+| 640×480 | hbox-container | start | 156/146 | 204/182 | 228×214 |
+| 640×480 | hbox-container | center | 156/160 | 204/196 | 228×214 |
+| 640×480 | hbox-container | end | 156/174 | 204/210 | 228×214 |
+| 640×480 | hbox-container | stretch | 156/146 | 204/182 | 228×242 |
+| 1024×768 | box-container | start | 348/290 | 396/326 | 332×140 |
+| 1024×768 | box-container | center | 382/290 | 430/326 | 332×140 |
+| 1024×768 | box-container | end | 416/290 | 464/326 | 332×140 |
+| 1024×768 | box-container | stretch | 348/290 | 396/326 | 400×140 |
+| 1024×768 | vbox-container | start | 358/270 | 406/306 | 332×160 |
+| 1024×768 | vbox-container | center | 382/270 | 430/306 | 332×160 |
+| 1024×768 | vbox-container | end | 406/270 | 454/306 | 332×160 |
+| 1024×768 | vbox-container | stretch | 358/270 | 406/306 | 380×160 |
+| 1024×768 | hbox-container | start | 348/290 | 396/326 | 228×214 |
+| 1024×768 | hbox-container | center | 348/304 | 396/340 | 228×214 |
+| 1024×768 | hbox-container | end | 348/318 | 396/354 | 228×214 |
+| 1024×768 | hbox-container | stretch | 348/290 | 396/326 | 228×242 |
+
 ---
 ### Navigation
 - ← [Task-Index](./README.md)
