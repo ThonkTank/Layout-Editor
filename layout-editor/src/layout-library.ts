@@ -2,6 +2,36 @@
 import type { App, TFile, TFolder } from "obsidian";
 import { LayoutBlueprint, LayoutElement, SavedLayout } from "./types";
 
+export type LayoutLibraryErrorCode =
+    | "layout/id-invalid"
+    | "layout/id-invalid-characters"
+    | "layout/canvas-width-invalid"
+    | "layout/canvas-height-invalid"
+    | "layout/elements-empty"
+    | "layout/elements-invalid";
+
+export class LayoutLibraryError extends Error {
+    readonly code: LayoutLibraryErrorCode;
+    readonly context?: Record<string, unknown>;
+
+    constructor(code: LayoutLibraryErrorCode, message: string, context?: Record<string, unknown>) {
+        super(message);
+        this.name = "LayoutLibraryError";
+        this.code = code;
+        if (context && Object.keys(context).length) {
+            this.context = context;
+        }
+    }
+}
+
+function createLayoutLibraryError(
+    code: LayoutLibraryErrorCode,
+    message: string,
+    context?: Record<string, unknown>,
+): LayoutLibraryError {
+    return new LayoutLibraryError(code, message, context);
+}
+
 export const LAYOUT_SCHEMA_VERSION = 1;
 export const MIN_SUPPORTED_LAYOUT_SCHEMA_VERSION = 0;
 
@@ -141,20 +171,52 @@ function findLayoutFile(app: App, fileName: string): TFile | null {
     return null;
 }
 
-function collectLayoutFiles(app: App): TFile[] {
-    const seen = new Set<string>();
-    const files: TFile[] = [];
+interface LayoutFileDescriptor {
+    file: TFile & { extension: string; basename: string; stat: FileStatLike; path: string };
+    folder: string;
+}
+
+function collectLayoutFileDescriptors(app: App): LayoutFileDescriptor[] {
+    const descriptors: LayoutFileDescriptor[] = [];
     for (const folder of LAYOUT_FOLDER_CANDIDATES) {
-        const abstract = app.vault.getAbstractFileByPath(normalizePath(folder));
+        const normalizedFolder = normalizePath(folder);
+        const abstract = app.vault.getAbstractFileByPath(normalizedFolder);
         if (!isFolder(abstract)) continue;
         for (const child of abstract.children) {
             if (!isFile(child) || child.extension !== "json") continue;
-            if (seen.has(child.basename)) continue;
-            seen.add(child.basename);
-            files.push(child);
+            descriptors.push({ file: child, folder: normalizedFolder });
         }
     }
+    return descriptors;
+}
+
+function collectLayoutFiles(app: App): TFile[] {
+    const seen = new Set<string>();
+    const files: TFile[] = [];
+    for (const descriptor of collectLayoutFileDescriptors(app)) {
+        if (seen.has(descriptor.file.basename)) continue;
+        seen.add(descriptor.file.basename);
+        files.push(descriptor.file);
+    }
     return files;
+}
+
+export interface LayoutVaultFileInfo {
+    basename: string;
+    folder: string;
+    path: string;
+    createdAt: number;
+    modifiedAt: number;
+}
+
+export function listLayoutVaultFiles(app: App): LayoutVaultFileInfo[] {
+    return collectLayoutFileDescriptors(app).map(({ file, folder }) => ({
+        basename: file.basename,
+        folder,
+        path: file.path,
+        createdAt: file.stat.ctime ?? 0,
+        modifiedAt: file.stat.mtime ?? 0,
+    }));
 }
 
 function createFileName(id: string): string {
@@ -182,10 +244,12 @@ function resolveLayoutId(candidate?: string): string {
         return createId();
     }
     if (FORBIDDEN_ID_CHARS.test(trimmed)) {
-        throw new Error("Layout-ID darf keine Pfadtrenner enthalten.");
+        throw createLayoutLibraryError("layout/id-invalid-characters", "Layout-ID darf keine Pfadtrenner enthalten.", {
+            id: trimmed,
+        });
     }
     if (trimmed === "." || trimmed === "..") {
-        throw new Error("Layout-ID ist ungültig.");
+        throw createLayoutLibraryError("layout/id-invalid", "Layout-ID ist ungültig.", { id: trimmed });
     }
     return trimmed;
 }
@@ -202,8 +266,8 @@ export async function saveLayoutToLibrary(
         await ensureLayoutFolder(app);
     }
     const now = new Date().toISOString();
-    const canvasWidth = ensureCanvasDimension(payload.canvasWidth, "Breite");
-    const canvasHeight = ensureCanvasDimension(payload.canvasHeight, "Höhe");
+    const canvasWidth = ensureCanvasDimension(payload.canvasWidth, "width");
+    const canvasHeight = ensureCanvasDimension(payload.canvasHeight, "height");
     const elements = normalizeElementsStrict(payload.elements);
     const entry: VersionedSavedLayout = {
         id,
@@ -225,9 +289,11 @@ export async function saveLayoutToLibrary(
     return entry;
 }
 
-function ensureCanvasDimension(value: number, label: "Breite" | "Höhe"): number {
+function ensureCanvasDimension(value: number, dimension: "width" | "height"): number {
     if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
-        throw new Error(`Ungültige ${label} für das Layout.`);
+        const label = dimension === "width" ? "Breite" : "Höhe";
+        const code = dimension === "width" ? "layout/canvas-width-invalid" : "layout/canvas-height-invalid";
+        throw createLayoutLibraryError(code, `Ungültige ${label} für das Layout.`, { value });
     }
     return Math.round(value);
 }
@@ -312,7 +378,7 @@ function normalizeElements(value: unknown): LayoutElement[] | null {
 function normalizeElementsStrict(value: unknown): LayoutElement[] {
     const normalized = normalizeElements(value);
     if (!normalized) {
-        throw new Error("Layout enthält keine gültigen Elemente.");
+        throw createLayoutLibraryError("layout/elements-empty", "Layout enthält keine gültigen Elemente.");
     }
     const expectedLength = Array.isArray(value)
         ? value.length
@@ -320,7 +386,10 @@ function normalizeElementsStrict(value: unknown): LayoutElement[] {
           ? Object.keys(value as Record<string, unknown>).length
           : normalized.length;
     if (expectedLength !== normalized.length) {
-        throw new Error("Mindestens ein Layout-Element enthält ungültige Werte und konnte nicht gespeichert werden.");
+        throw createLayoutLibraryError(
+            "layout/elements-invalid",
+            "Mindestens ein Layout-Element enthält ungültige Werte und konnte nicht gespeichert werden.",
+        );
     }
     return normalized;
 }
