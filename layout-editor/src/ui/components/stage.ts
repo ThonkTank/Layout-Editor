@@ -12,6 +12,46 @@ export interface StageComponentOptions {
     renderPreview?: typeof renderElementPreview;
 }
 
+export interface StageCameraViewport {
+    readonly offsetX: number;
+    readonly offsetY: number;
+    readonly scale: number;
+    readonly viewportWidth: number;
+    readonly viewportHeight: number;
+    readonly worldLeft: number;
+    readonly worldTop: number;
+    readonly worldRight: number;
+    readonly worldBottom: number;
+}
+
+interface StageCameraEventBase {
+    readonly current: StageCameraViewport;
+    readonly target: StageCameraViewport;
+}
+
+export interface StageCameraCenterEvent extends StageCameraEventBase {
+    readonly reason: "initial" | "focus";
+    readonly canvas: { width: number; height: number };
+    readonly elementId?: string;
+}
+
+export interface StageCameraZoomEvent extends StageCameraEventBase {
+    readonly factor: number;
+    readonly pointer: { clientX: number; clientY: number };
+    readonly world: { x: number; y: number };
+}
+
+export interface StageCameraScrollEvent extends StageCameraEventBase {
+    readonly delta: { x: number; y: number };
+    readonly pointerId: number | null;
+}
+
+export interface StageCameraObserver {
+    onCenter?(event: StageCameraCenterEvent): void;
+    onZoom?(event: StageCameraZoomEvent): void;
+    onScroll?(event: StageCameraScrollEvent): void;
+}
+
 interface InteractionCleanup {
     (): void;
 }
@@ -36,6 +76,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
     private elementSnapshotIndex = new Map<string, LayoutElement>();
     private elementCursorCache = new Map<string, StageElementCursor>();
     private currentElementsSnapshot: LayoutElement[] = [];
+    private readonly cameraObservers = new Set<StageCameraObserver>();
 
     private cameraScale = 1;
     private cameraX = 0;
@@ -101,7 +142,15 @@ export class StageComponent extends UIComponent<HTMLElement> {
         this.elementsRenderer?.clear();
         this.elementsRenderer = null;
         this.elementNodes.clear();
+        this.cameraObservers.clear();
         this.clearHost();
+    }
+
+    observeCamera(observer: StageCameraObserver): () => void {
+        this.cameraObservers.add(observer);
+        return () => {
+            this.cameraObservers.delete(observer);
+        };
     }
 
     syncStage(elements: LayoutElement[], selectedId: string | null, canvasWidth: number, canvasHeight: number) {
@@ -149,8 +198,20 @@ export class StageComponent extends UIComponent<HTMLElement> {
         const scale = this.cameraScale || 1;
         const centerX = element.x + element.width / 2;
         const centerY = element.y + element.height / 2;
-        this.cameraX = Math.round(rect.width / 2 - centerX * scale);
-        this.cameraY = Math.round(rect.height / 2 - centerY * scale);
+        const nextX = Math.round(rect.width / 2 - centerX * scale);
+        const nextY = Math.round(rect.height / 2 - centerY * scale);
+        this.emitCameraCenter(
+            {
+                reason: "focus",
+                canvas: { width: this.canvasWidth, height: this.canvasHeight },
+                elementId: element.id,
+            },
+            nextX,
+            nextY,
+            scale,
+        );
+        this.cameraX = nextX;
+        this.cameraY = nextY;
         this.applyCameraTransform();
     }
 
@@ -420,8 +481,12 @@ export class StageComponent extends UIComponent<HTMLElement> {
         if (event.pointerId !== this.panPointerId) return;
         const dx = event.clientX - this.panStartX;
         const dy = event.clientY - this.panStartY;
-        this.cameraX = this.panOriginX + dx;
-        this.cameraY = this.panOriginY + dy;
+        const nextX = this.panOriginX + dx;
+        const nextY = this.panOriginY + dy;
+        if (nextX === this.cameraX && nextY === this.cameraY) return;
+        this.emitCameraScroll(event.pointerId, nextX, nextY);
+        this.cameraX = nextX;
+        this.cameraY = nextY;
         this.applyCameraTransform();
     };
 
@@ -444,9 +509,21 @@ export class StageComponent extends UIComponent<HTMLElement> {
         const pointerY = event.clientY - rect.top;
         const worldX = (pointerX - this.cameraX) / this.cameraScale;
         const worldY = (pointerY - this.cameraY) / this.cameraScale;
+        const nextX = pointerX - worldX * nextScale;
+        const nextY = pointerY - worldY * nextScale;
+        this.emitCameraZoom(
+            {
+                factor: nextScale / this.cameraScale,
+                pointer: { clientX: event.clientX, clientY: event.clientY },
+                world: { x: worldX, y: worldY },
+            },
+            nextX,
+            nextY,
+            nextScale,
+        );
         this.cameraScale = nextScale;
-        this.cameraX = pointerX - worldX * this.cameraScale;
-        this.cameraY = pointerY - worldY * this.cameraScale;
+        this.cameraX = nextX;
+        this.cameraY = nextY;
         this.applyCameraTransform();
     };
 
@@ -462,8 +539,81 @@ export class StageComponent extends UIComponent<HTMLElement> {
         if (!rect.width || !rect.height) return;
         const scaledWidth = canvasWidth * this.cameraScale;
         const scaledHeight = canvasHeight * this.cameraScale;
-        this.cameraX = Math.round((rect.width - scaledWidth) / 2);
-        this.cameraY = Math.round((rect.height - scaledHeight) / 2);
+        const nextX = Math.round((rect.width - scaledWidth) / 2);
+        const nextY = Math.round((rect.height - scaledHeight) / 2);
+        this.emitCameraCenter(
+            {
+                reason: "initial",
+                canvas: { width: canvasWidth, height: canvasHeight },
+            },
+            nextX,
+            nextY,
+            this.cameraScale,
+        );
+        this.cameraX = nextX;
+        this.cameraY = nextY;
         this.applyCameraTransform();
+    }
+
+    private emitCameraCenter(meta: Omit<StageCameraCenterEvent, "current" | "target">, x: number, y: number, scale: number) {
+        if (!this.cameraObservers.size) return;
+        const current = this.describeViewport(this.cameraX, this.cameraY, this.cameraScale);
+        const target = this.describeViewport(x, y, scale);
+        const event: StageCameraCenterEvent = { ...meta, current, target };
+        for (const observer of [...this.cameraObservers]) {
+            observer.onCenter?.(event);
+        }
+    }
+
+    private emitCameraZoom(
+        meta: Omit<StageCameraZoomEvent, "current" | "target">,
+        x: number,
+        y: number,
+        scale: number,
+    ) {
+        if (!this.cameraObservers.size) return;
+        const current = this.describeViewport(this.cameraX, this.cameraY, this.cameraScale);
+        const target = this.describeViewport(x, y, scale);
+        const event: StageCameraZoomEvent = { ...meta, current, target };
+        for (const observer of [...this.cameraObservers]) {
+            observer.onZoom?.(event);
+        }
+    }
+
+    private emitCameraScroll(pointerId: number | null, x: number, y: number) {
+        if (!this.cameraObservers.size) return;
+        const current = this.describeViewport(this.cameraX, this.cameraY, this.cameraScale);
+        const target = this.describeViewport(x, y, this.cameraScale);
+        const event: StageCameraScrollEvent = {
+            current,
+            target,
+            delta: { x: target.offsetX - current.offsetX, y: target.offsetY - current.offsetY },
+            pointerId,
+        };
+        for (const observer of [...this.cameraObservers]) {
+            observer.onScroll?.(event);
+        }
+    }
+
+    private describeViewport(x: number, y: number, scale: number): StageCameraViewport {
+        const rect = this.viewportEl?.getBoundingClientRect();
+        const width = rect?.width ?? 0;
+        const height = rect?.height ?? 0;
+        const safeScale = scale || 1;
+        const worldLeft = -x / safeScale;
+        const worldTop = -y / safeScale;
+        const worldWidth = width / safeScale;
+        const worldHeight = height / safeScale;
+        return {
+            offsetX: x,
+            offsetY: y,
+            scale: safeScale,
+            viewportWidth: width,
+            viewportHeight: height,
+            worldLeft,
+            worldTop,
+            worldRight: worldLeft + worldWidth,
+            worldBottom: worldTop + worldHeight,
+        };
     }
 }
