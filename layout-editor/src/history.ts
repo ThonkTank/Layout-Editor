@@ -9,11 +9,19 @@ export class LayoutHistory {
 
     constructor(
         private readonly capture: () => LayoutEditorSnapshot,
-        private readonly restore: (snapshot: LayoutEditorSnapshot) => void,
+    private readonly restore: (snapshot: LayoutEditorSnapshot) => void,
     ) {}
 
     get isRestoring() {
         return this.restoring;
+    }
+
+    get canUndo() {
+        return this.index > 0;
+    }
+
+    get canRedo() {
+        return this.index >= 0 && this.index < this.snapshots.length - 1;
     }
 
     reset(initial?: LayoutEditorSnapshot) {
