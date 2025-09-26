@@ -14,5 +14,6 @@ Die Skripte automatisieren Build-, Test- und Generierungsaufgaben für den Layou
 
 ## Weiterführende Dokumentation
 - Tooling-Überblick & Befehle: [`../docs/tooling.md`](../docs/tooling.md)
-- Modul-Architektur und Ownership: [`../src/LayoutEditorOverview.txt`](../src/LayoutEditorOverview.txt)
+- Modul-Architektur und Ownership: [`../src/README.md`](../src/README.md)
+- Bekannte Architektur-Lücken (Store/History): [`../../todo/layout-store-consistency.md`](../../todo/layout-store-consistency.md)
 - Projektweite Nutzung & Workflows: [`../../README.md`](../../README.md)

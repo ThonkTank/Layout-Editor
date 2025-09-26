@@ -56,6 +56,10 @@ Durch Tests (`tests/api-versioning.test.ts`) wird sichergestellt, dass Legacy-La
 
 Die Tests bundlen über esbuild und führen alle `*.test.ts`-Dateien in `layout-editor/tests` aus.
 
+## Offene Aufgaben
+
+- [Layout-Store garantiert keine Seiteneffekte](todo/layout-store-consistency.md) – Tracking für die geplante Umstellung auf unveränderliche Snapshots und schnellere Stage-Cursor.
+
 ## Weiterführende Dokumentation
 
 - [`docs/api-migrations.md`](docs/api-migrations.md) – Richtlinien für API-Änderungen und Layout-Migrationen.
