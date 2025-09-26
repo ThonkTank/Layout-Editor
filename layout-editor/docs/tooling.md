@@ -17,3 +17,8 @@ This project relies on shared linting, formatting, and test tooling to keep cont
 - `npm test` – Builds each `*.test.ts` file under `tests/` with esbuild and executes them with Node.js. The runner fails fast on the first error and reports overall progress.
 
 Add new test files under `tests/` using the `*.test.ts` naming convention to have them discovered automatically.
+
+## Navigation
+
+- [Documentation index](./README.md)
+- Related: [Plugin API](./plugin-api.md)

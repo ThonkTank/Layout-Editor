@@ -52,5 +52,6 @@ Bei Erfolg werden Metadaten wie `createdAt`, `updatedAt` und `schemaVersion` ges
 
 ## Weiterführende Dokumente
 
+- [Dokumentenindex](./README.md)
 - [`docs/persistence-errors.md`](./persistence-errors.md) – Detailbeschreibung des Persistenz-Banners und Fehlercodes.
 - [`docs/domain-configuration.md`](./domain-configuration.md) – Erläutert, wie Seed-Layouts in die Bibliothek synchronisiert werden.

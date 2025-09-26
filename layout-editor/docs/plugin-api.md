@@ -4,6 +4,11 @@ Diese Seite beschreibt die öffentliche Schnittstelle, die `LayoutEditorPlugin.g
 dokumente des Repos um konkrete Signaturen, Parameterbeschreibungen sowie Hinweise zur Versionierung und zum Fehlerverhalten der
 Methoden. Die Signaturen basieren auf `src/main.ts`.
 
+## Navigation
+
+- [Dokumentenindex](./README.md)
+- Verwandt: [View-Registry](./view-registry.md)
+
 ## Versionierung & Kompatibilität
 
 | Feld/Funktion | Zweck | Seit | Hinweise |

@@ -40,3 +40,8 @@ Die Hilfsfunktionen erleichtern Fehlersuche und Telemetrie, ohne den bestehenden
 * `resetViewBindings` wirft `Error: Duplicate view binding ids detected: "<id>" [<label1>, <label2>, ...]`.
 
 Entwickler können diese Fehler auffangen, um alternative Workflows anzubieten (z. B. UI-Benachrichtigungen oder automatische Umbenennungen).
+
+## Weiterführend
+
+- [Dokumentenindex](./README.md)
+- Verwandt: [Plugin-API](./plugin-api.md)

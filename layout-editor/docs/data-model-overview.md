@@ -51,3 +51,8 @@ consumers treat it as read-only output from the tree service.
 3. Containers with no children expose an empty array, preserving existing UI logic.
 4. Reparenting and reordering must go through the store so validation rules run and
    history snapshots remain in sync.
+
+## Navigation
+
+- [Documentation index](./README.md)
+- Related: [Layout history design](./history-design.md)

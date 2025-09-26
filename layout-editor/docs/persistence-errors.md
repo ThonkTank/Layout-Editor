@@ -25,3 +25,8 @@ zu Vault-Pfaden, Schema-Regeln und Fehlerquellen liefert [`layout-library.md`](.
 
 Die Banner-Komponente steht als `StatusBannerComponent` zur Verfügung und kann für weitere Statusmeldungen wiederverwendet
 werden.
+
+## Weiterführend
+
+- [Dokumentenindex](./README.md)
+- Verwandt: [Layout-Bibliothek](./layout-library.md)
