@@ -1,5 +1,6 @@
 // src/plugins/layout-editor/types.ts
-export type LayoutElementType = string;
+export type LayoutElementType =
+    (typeof import("./elements/component-manifest"))["COMPONENTS"][number]["definition"]["type"];
 
 export type LayoutContainerType = LayoutElementType;
 
@@ -26,6 +27,9 @@ export interface LayoutElement {
     attributes: string[];
     parentId?: string;
     layout?: LayoutContainerConfig;
+    /**
+     * Derived relationship from the layout tree. Containers expose an empty array when they have no children.
+     */
     children?: string[];
     viewBindingId?: string;
     viewState?: Record<string, unknown>;
