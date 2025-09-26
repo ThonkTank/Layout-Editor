@@ -22,6 +22,7 @@ Der Layout-Editor ist ein Obsidian-Plugin zum Entwerfen komplexer Formular- und 
 - Jede Instanz von `LayoutEditorPlugin.getApi()` liefert ein Objekt mit `apiVersion` sowie den Helfern `isApiVersionAtLeast`, `assertApiVersion` und `withMinimumApiVersion`.
 - Neue Features werden hinter Versionsprüfungen freigeschaltet. Konsumenten können so optional auf neue Funktionen reagieren, ohne ältere Plugin-Versionen zu brechen.
 - Die aktuell ausgelieferte API-Version lautet `1.0.0`.
+- Eine vollständige Referenz aller API-Methoden mit Workflows und Fehlerverhalten findet sich unter [`layout-editor/docs/plugin-api.md`](layout-editor/docs/plugin-api.md).
 
 ### Kompatibilitäts-Helfer
 

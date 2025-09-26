@@ -28,6 +28,7 @@
 ### 2.2 Keine Versionierung der öffentlichen API
 - `LayoutEditorPluginApi` wird ohne Versionsangabe exportiert (`src/main.ts`, Zeilen 26–72). Änderungen an den Signaturen würden Dritt-Plugins sofort brechen.
 - Empfehlung: Eine `apiVersion`-Kennung sowie Deprecation-Strategie einführen und Dokumentation in README ergänzen.
+- _Update 2024-05-23_: Die Dokumentation in `layout-editor/docs/plugin-api.md` beschreibt API-Versionierung und Methoden. Eine technische Strategie zur Deprecation (z. B. getrennte Version-Pipelines) fehlt weiterhin.
 
 ### 2.3 Fehlende Validierung bei Element-Definitionen
 - `registerLayoutElementDefinition` akzeptiert Definitionen ohne Pflichtfelder jenseits von `type` (`src/definitions.ts`, Zeilen 76–86). Fehlerhafte Register-Aufrufe können zur Laufzeit ungültige UI erzeugen, da `renderAddElementControl` keine defensiven Checks hat (`src/view.ts`, Zeilen 226–320).
