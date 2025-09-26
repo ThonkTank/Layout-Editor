@@ -1,7 +1,8 @@
 # Persistenzfehler im Layout-Editor
 
 Der Header des Layout-Editors blendet bei fehlgeschlagenen Speicheroperationen eine persistente Statusleiste ein. Die Leiste
-stellt strukturierte Informationen dar, damit Anwender den Fehler ohne Konsole nachvollziehen können.
+stellt strukturierte Informationen dar, damit Anwender den Fehler ohne Konsole nachvollziehen können. Technische Hintergründe
+zu Vault-Pfaden, Schema-Regeln und Fehlerquellen liefert [`layout-library.md`](./layout-library.md).
 
 ## Verhalten
 

@@ -6,7 +6,8 @@ Der Layout-Editor ist ein Obsidian-Plugin zum Entwerfen komplexer Formular- und 
 
 - **Interaktive Editor-Ansicht** – Öffne den Layout-Editor als eigene Obsidian-View mit Canvas, Strukturbaum und Inspector, um Layouts visuell zu modellieren.
 - **Erweiterbare Elementbibliothek** – Registriere eigene UI-Komponenten und View-Bindings über die öffentliche Plugin-API.
-- **Layout-Bibliothek** – Speichere Layouts im Vault, lade sie erneut oder teile sie mit anderen Plugins.
+- **Layout-Bibliothek** – Speichere Layouts im Vault, lade sie erneut oder teile sie mit anderen Plugins. Details siehe
+  [`layout-editor/docs/layout-library.md`](layout-editor/docs/layout-library.md).
 - **Versionierte Plugin-API** – `apiVersion` kennzeichnet das veröffentlichte API-Level, Helfer wie `isApiVersionAtLeast` und `withMinimumApiVersion` erlauben defensive Feature-Gates.
 - **Schema-Migrationen** – Gespeicherte Layouts enthalten ein `schemaVersion`-Feld. Die Bibliothek führt Migrationen zentral aus und warnt bei fehlenden Pfaden oder zukünftigen Versionen.
 
