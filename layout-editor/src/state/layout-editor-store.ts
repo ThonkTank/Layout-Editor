@@ -83,6 +83,9 @@ export class LayoutEditorStore {
     private readonly tree = new LayoutTree();
     private exportPayload = "";
     private exportDirty = true;
+    private interactionDepth = 0;
+    private pendingStateEmit = false;
+    private pendingSkipExport = true;
     private readonly stateRef: MutableLayoutEditorState = {
         canvasWidth: 800,
         canvasHeight: 600,
@@ -119,6 +122,21 @@ export class LayoutEditorStore {
 
     getState(): LayoutEditorState {
         return this.createSnapshot();
+    }
+
+    runInteraction<T>(operation: () => T): T {
+        this.interactionDepth++;
+        try {
+            return operation();
+        } finally {
+            this.interactionDepth--;
+            if (this.interactionDepth === 0 && this.pendingStateEmit) {
+                const skipExport = this.pendingSkipExport;
+                this.pendingStateEmit = false;
+                this.pendingSkipExport = true;
+                this.dispatchState(skipExport ? { skipExport: true } : undefined);
+            }
+        }
     }
 
     selectElement(id: string | null) {
@@ -572,6 +590,17 @@ export class LayoutEditorStore {
     }
 
     private emitState(options?: MutationOptions) {
+        if (this.interactionDepth > 0) {
+            this.pendingStateEmit = true;
+            if (!options?.skipExport) {
+                this.pendingSkipExport = false;
+            }
+            return;
+        }
+        this.dispatchState(options);
+    }
+
+    private dispatchState(options?: MutationOptions) {
         this.updateDerivedFlags();
         const listeners = Array.from(this.listeners);
         for (const listener of listeners) {

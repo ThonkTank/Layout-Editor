@@ -9,10 +9,20 @@ import { DiffRenderer } from "./diff-renderer";
 export interface StageComponentOptions {
     store: LayoutEditorStore;
     onSelectElement?(id: string | null): void;
+    renderPreview?: typeof renderElementPreview;
 }
 
 interface InteractionCleanup {
     (): void;
+}
+
+interface StageElementCursor {
+    readonly element: LayoutElement | null;
+    readonly parentId: string | null;
+    readonly parent: LayoutElement | null;
+    readonly children: readonly LayoutElement[];
+    readonly isContainer: boolean;
+    readonly parentIsContainer: boolean;
 }
 
 export class StageComponent extends UIComponent<HTMLElement> {
@@ -22,6 +32,10 @@ export class StageComponent extends UIComponent<HTMLElement> {
     private viewportEl!: HTMLElement;
     private cameraPanEl!: HTMLElement;
     private cameraZoomEl!: HTMLElement;
+    private readonly previewRenderer: typeof renderElementPreview;
+    private elementSnapshotIndex = new Map<string, LayoutElement>();
+    private elementCursorCache = new Map<string, StageElementCursor>();
+    private currentElementsSnapshot: LayoutElement[] = [];
 
     private cameraScale = 1;
     private cameraX = 0;
@@ -33,9 +47,12 @@ export class StageComponent extends UIComponent<HTMLElement> {
     private panOriginX = 0;
     private panOriginY = 0;
     private hasInitializedCamera = false;
+    private canvasWidth = 0;
+    private canvasHeight = 0;
 
     constructor(private readonly options: StageComponentOptions) {
         super();
+        this.previewRenderer = options.renderPreview ?? renderElementPreview;
     }
 
     protected onMount(host: HTMLElement): void {
@@ -89,9 +106,14 @@ export class StageComponent extends UIComponent<HTMLElement> {
 
     syncStage(elements: LayoutElement[], selectedId: string | null, canvasWidth: number, canvasHeight: number) {
         if (!this.canvasEl) return;
+        this.canvasWidth = canvasWidth;
+        this.canvasHeight = canvasHeight;
         this.canvasEl.style.width = `${canvasWidth}px`;
         this.canvasEl.style.height = `${canvasHeight}px`;
         this.selectedElementId = selectedId;
+        this.currentElementsSnapshot = elements;
+        this.elementSnapshotIndex = new Map(elements.map(element => [element.id, element]));
+        this.elementCursorCache.clear();
         this.elementsRenderer?.patch(elements);
 
         if (!this.hasInitializedCamera) {
@@ -104,6 +126,16 @@ export class StageComponent extends UIComponent<HTMLElement> {
     }
 
     refreshElement(element: LayoutElement) {
+        this.elementSnapshotIndex.set(element.id, element);
+        const index = this.currentElementsSnapshot.findIndex(entry => entry.id === element.id);
+        if (index === -1) {
+            this.currentElementsSnapshot = [...this.currentElementsSnapshot, element];
+        } else {
+            const next = [...this.currentElementsSnapshot];
+            next[index] = element;
+            this.currentElementsSnapshot = next;
+        }
+        this.elementCursorCache.clear();
         const node = this.elementNodes.get(element.id);
         if (node) {
             this.syncElementNode(node, element);
@@ -185,10 +217,10 @@ export class StageComponent extends UIComponent<HTMLElement> {
         node.classList.toggle("is-selected", element.id === this.selectedElementId);
         const contentEl = node.querySelector<HTMLElement>('[data-role="content"]');
         if (contentEl) {
-            renderElementPreview({
+            this.previewRenderer({
                 host: contentEl,
                 element,
-                elements: this.options.store.getState().elements,
+                elements: this.currentElementsSnapshot,
                 finalize: target => this.finalizeInlineMutation(target),
                 ensureContainerDefaults: target => this.options.store.ensureContainerDefaults(target.id),
                 applyContainerLayout: (target, opts) => this.options.store.applyContainerLayout(target.id, opts),
@@ -212,23 +244,27 @@ export class StageComponent extends UIComponent<HTMLElement> {
         const startY = event.clientY;
         const originX = element.x;
         const originY = element.y;
-        const isContainer = isContainerType(element.type);
-        const parent = element.parentId ? this.options.store.getState().elements.find(el => el.id === element.parentId) : null;
+        const cursor = this.resolveElementCursor(element.id);
+        const isContainer = cursor.isContainer;
+        const parentContainerId = cursor.parentIsContainer ? cursor.parentId : null;
 
         const onMove = (ev: PointerEvent) => {
             const dx = ev.clientX - startX;
             const dy = ev.clientY - startY;
             let nextX = originX + dx;
             let nextY = originY + dy;
-            const canvasState = this.options.store.getState();
-            const maxX = Math.max(0, canvasState.canvasWidth - element.width);
-            const maxY = Math.max(0, canvasState.canvasHeight - element.height);
+            const maxX = Math.max(0, this.canvasWidth - element.width);
+            const maxY = Math.max(0, this.canvasHeight - element.height);
             nextX = clamp(nextX, 0, maxX);
             nextY = clamp(nextY, 0, maxY);
-            this.options.store.moveElement(element.id, { x: nextX, y: nextY }, { skipExport: true });
-            if (parent && isContainerElement(parent)) {
-                this.options.store.applyContainerLayout(parent.id, { silent: true });
-            }
+            this.options.store.runInteraction(() => {
+                this.options.store.moveElement(element.id, { x: nextX, y: nextY }, { skipExport: true });
+                if (isContainer) {
+                    this.options.store.applyContainerLayout(element.id, { silent: true });
+                } else if (parentContainerId) {
+                    this.options.store.applyContainerLayout(parentContainerId, { silent: true });
+                }
+            });
         };
 
         const stopMove = this.listen(window, "pointermove", onMove as EventListener);
@@ -237,8 +273,8 @@ export class StageComponent extends UIComponent<HTMLElement> {
             stopUp();
             if (isContainer) {
                 this.options.store.applyContainerLayout(element.id);
-            } else if (parent && isContainerElement(parent)) {
-                this.options.store.applyContainerLayout(parent.id);
+            } else if (parentContainerId) {
+                this.options.store.applyContainerLayout(parentContainerId);
             }
             this.options.store.pushHistorySnapshot();
             this.options.store.flushExport();
@@ -258,8 +294,9 @@ export class StageComponent extends UIComponent<HTMLElement> {
         const originY = element.y;
         const originW = element.width;
         const originH = element.height;
-        const isContainer = isContainerType(element.type);
-        const parent = element.parentId ? this.options.store.getState().elements.find(el => el.id === element.parentId) : null;
+        const cursor = this.resolveElementCursor(element.id);
+        const isContainer = cursor.isContainer;
+        const parentContainerId = cursor.parentIsContainer ? cursor.parentId : null;
 
         const onMove = (ev: PointerEvent) => {
             const dx = ev.clientX - startX;
@@ -275,7 +312,7 @@ export class StageComponent extends UIComponent<HTMLElement> {
                 nextX = proposedX;
                 nextW = originW + (originX - proposedX);
             } else {
-                const maxWidth = Math.max(MIN_ELEMENT_SIZE, this.options.store.getState().canvasWidth - originX);
+                const maxWidth = Math.max(MIN_ELEMENT_SIZE, this.canvasWidth - originX);
                 nextW = clamp(originW + dx, MIN_ELEMENT_SIZE, maxWidth);
             }
 
@@ -285,22 +322,24 @@ export class StageComponent extends UIComponent<HTMLElement> {
                 nextY = proposedY;
                 nextH = originH + (originY - proposedY);
             } else {
-                const maxHeight = Math.max(MIN_ELEMENT_SIZE, this.options.store.getState().canvasHeight - originY);
+                const maxHeight = Math.max(MIN_ELEMENT_SIZE, this.canvasHeight - originY);
                 nextH = clamp(originH + dy, MIN_ELEMENT_SIZE, maxHeight);
             }
 
-            this.options.store.moveElement(
-                element.id,
-                { x: nextX, y: nextY },
-                { skipExport: true, cascadeChildren: false },
-            );
-            this.options.store.resizeElement(element.id, { width: nextW, height: nextH }, { skipExport: true });
+            this.options.store.runInteraction(() => {
+                this.options.store.moveElement(
+                    element.id,
+                    { x: nextX, y: nextY },
+                    { skipExport: true, cascadeChildren: false },
+                );
+                this.options.store.resizeElement(element.id, { width: nextW, height: nextH }, { skipExport: true });
 
-            if (isContainer) {
-                this.options.store.applyContainerLayout(element.id, { silent: true });
-            } else if (parent && isContainerElement(parent)) {
-                this.options.store.applyContainerLayout(parent.id, { silent: true });
-            }
+                if (isContainer) {
+                    this.options.store.applyContainerLayout(element.id, { silent: true });
+                } else if (parentContainerId) {
+                    this.options.store.applyContainerLayout(parentContainerId, { silent: true });
+                }
+            });
         };
 
         const stopMove = this.listen(window, "pointermove", onMove as EventListener);
@@ -309,8 +348,8 @@ export class StageComponent extends UIComponent<HTMLElement> {
             stopUp();
             if (isContainer) {
                 this.options.store.applyContainerLayout(element.id);
-            } else if (parent && isContainerElement(parent)) {
-                this.options.store.applyContainerLayout(parent.id);
+            } else if (parentContainerId) {
+                this.options.store.applyContainerLayout(parentContainerId);
             }
             this.options.store.pushHistorySnapshot();
             this.options.store.flushExport();
@@ -338,6 +377,29 @@ export class StageComponent extends UIComponent<HTMLElement> {
         if (nearRight && nearBottom) return { type: "resize", corner: "se" };
         if (nearLeft || nearRight || nearTop || nearBottom) return { type: "move" };
         return null;
+    }
+
+    private resolveElementCursor(elementId: string): StageElementCursor {
+        const cached = this.elementCursorCache.get(elementId);
+        if (cached) {
+            return cached;
+        }
+        const element = this.elementSnapshotIndex.get(elementId) ?? null;
+        const parentId = element?.parentId ?? null;
+        const parent = parentId ? this.elementSnapshotIndex.get(parentId) ?? null : null;
+        const children = element?.children
+            ?.map(childId => this.elementSnapshotIndex.get(childId) ?? null)
+            .filter((child): child is LayoutElement => !!child) ?? [];
+        const cursor: StageElementCursor = {
+            element,
+            parentId,
+            parent,
+            children,
+            isContainer: element ? isContainerType(element.type) : false,
+            parentIsContainer: !!(parent && isContainerElement(parent)),
+        };
+        this.elementCursorCache.set(elementId, cursor);
+        return cursor;
     }
 
     private onViewportPointerDown = (event: PointerEvent) => {

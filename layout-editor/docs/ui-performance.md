@@ -11,8 +11,10 @@ The component layer now renders through a lightweight diffing helper that keeps 
 ## Stage component
 
 - `StageComponent` keeps a keyed renderer over canvas nodes. Layout mutations pass through `DiffRenderer`, ensuring that drag/resize operations only repaint the affected element tiles instead of rebuilding the entire stage.
+- Element cursors are cached per snapshot. Pointer handlers resolve parents/children via the cursor map so they never scan the full element list and they can honour the immutable snapshots the store publishes.
 - Selection state is derived inside the shared `syncElementNode` update hook, so toggling selection or dimensions does not trigger unnecessary reflows.
 - Element-specific listeners (pointer move/leave/down) register on the per-node scope. When an element disappears, its interaction listeners disappear with it, preventing leaks between sessions.
+- Drag interactions run inside `LayoutEditorStore.runInteraction()`. The store batches `move`/`resize` plus layout reflows into a single state emission per frame, so the DOM stays in sync without flooding listeners.
 - Drag interactions now call `LayoutEditorStore.flushExport()` once the pointer is released. During the drag, frame updates emit only `state` events, batching export payloads until the interaction settles so JSON serialization does not run on every frame.
 
 ## Structure tree component
@@ -24,6 +26,7 @@ The component layer now renders through a lightweight diffing helper that keeps 
 ## Export payload batching
 
 - `LayoutEditorStore` memoises the last export payload and marks it dirty when state changes. Pointer-driven frame updates skip immediate serialization so drag gestures only fan out cheap `state` notifications.
+- `runInteraction()` defers event delivery until the enclosing interaction completes. Multiple mutations inside the same frame collapse into one state emission, and the exported snapshot is only recomputed when at least one mutation requests it.
 - `flushExport()` recomputes and publishes the JSON snapshot on demand. Components with long-running interactions (e.g. the stage) call it after drags/resizes complete, giving the export textarea an up-to-date view without flooding listeners during the interaction.
 
 ## Listener lifecycle

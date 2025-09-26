@@ -17,12 +17,9 @@ Dieser Ordner enthält die UI-Hilfsfunktionen des Layout-Editors – insbesonder
 - **Event-Handling**: Ereignisse immer über `scope.listen` bzw. `this.listen` registrieren, damit Cleanups automatisch laufen.
 - **Element-Baum**: `ElementTreeNode.id` muss eindeutig sein; Gruppen ohne `definition` werden als reine Abschnittsüberschriften behandelt.
 - **Tests**: Änderungen an UI-Hilfen erfordern Aktualisierungen in `../../tests/ui-component.test.ts` bzw. `../../tests/ui-diff-renderer.test.ts`.
+- **Stage-Performance**: `StageComponent` nutzt Snapshot-Cursor und `store.runInteraction()`, um Pointer-Frames ohne zusätzliche `getState()`-Aufrufe oder doppelte Exporte abzuwickeln. Neue Interaktionen müssen diese Mechanik respektieren.
 
 ## Weiterführende Dokumentation
 - Architektur-Überblick: [`../README.md`](../README.md)
 - Performance-Guidelines für UI-Widgets: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
 - Projektweite Einordnung & Workflows: [`../../../README.md`](../../../README.md)
-
-## To-Do
-
-- [Stage-Pointer-Interaktionen verursachen O(n)-Scans](../../../todo/stage-pointer-performance.md) – Pointer-Handler benötigen Caches/Cursor, um Frame-Jank und doppelte Mutationen zu vermeiden.
