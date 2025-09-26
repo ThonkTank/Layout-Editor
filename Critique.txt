@@ -11,6 +11,8 @@
 - UI-Hilfen (Buttons, Felder, Status) liegen in `elements/ui.ts`, werden aber ausschließlich manuell über `createDiv()`/`addEventListener()` verkabelt. Komplexe Interaktionen (Panel-Resizing, Kamera, Drag & Drop) sind dadurch verstreut in anonymen Funktionen (`src/view.ts`, Zeilen 715–761, 929–1035), was Wartung erschwert.
 - Vorschlag: Eine modulare Komponentenarchitektur (z. B. Lit, Svelte oder zumindest Utility-Funktionen pro Panel) würde Wiederverwendung verbessern und klarere Lifecycle-Hooks für Event-Listener bieten.
 
+-----------------------------------------------------------------------------------
+
 ### 1.3 Datenmodell ohne Aggregations-Layer
 - Elemente werden als einfache Array-Struktur `LayoutElement[]` gehalten (`src/view.ts`, Zeile 42; `src/types.ts`, Zeilen 12–36). Zugriffe suchen ständig linear nach IDs (z. B. `this.elements.find(...)` in `createElement` und `renderStructure`).
 - Das führt zu O(n²)-Mustern für Container-Operationen (`src/view.ts`, Zeilen 871–1042) und komplizierte Konsistenzprüfungen, weil `children`-Listen redundant zu `parentId` gepflegt werden.
