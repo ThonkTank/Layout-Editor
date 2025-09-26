@@ -92,7 +92,8 @@ möglich sind.
 Beim Plugin-Start ruft `ensureSeedLayouts` die aktuell aktive Konfiguration ab und legt für
 jedes definierte Seed-Layout einen Eintrag in der Layout-Bibliothek an. Existierende Einträge
 werden nicht überschrieben. Scheitert das Laden der Vault-Konfiguration, wird automatisch auf
-die eingebauten Seeds zurückgegriffen.
+die eingebauten Seeds zurückgegriffen. Details zur Struktur der Bibliothek findest du in
+[`layout-library.md`](./layout-library.md).
 
 ## Entwicklungsnotizen
 
