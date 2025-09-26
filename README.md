@@ -1,24 +1,56 @@
 # Layout-Editor
-An Obsidian Plugin developed to help you quickly and comfortably design complex layouts for other obsidian plugins.
 
-Geplante Features:
-  Eine Layout Editor Ansicht die:
-  - Über eine intuitive echtzeit Arbeitsfläche verfügt, in der man Layouts interaktiv designen kann
-  - Mit Godot-ähnlicher Node Übersicht zur Linken
-  - Mit godot-ähnlicher Element Bearbeiten funktionen zur rechten
-  - Erstellte Layouts werden in einen "LE-Layouts" Ordner im Obsidian Vault gespeichert, von wo aus sie erneut geöffnet werden können um weiter an ihnen zu arbeiten odre von anderen Plugis genutzt werden können.
-  - Ui Komponenten können über eine godot-ähnliche node-auswahl zur Arbeitsfläche hinzugefügt werden.
-  - UI Elemente werden aus einem LE-Elements Ordner im Vault gezogen, in welchem user ganz einfach eigene Elemente hinzufügen können. Alle Elemente sind deshalb komplett selfcontained, es sei denn sie inheriten Funktionen von anderen Elementen.
-    
-  UI Elemente enthalten:
-  - Textfelder zum anzeigen oder editieren von Text
-  - Buttons, checkboxen und andere Elemente, welche mit Funktionen anderer Plugins verbunden werden können, solange diese in einem LE-Functions Ordner im Vault gespeichert sind
-  - View-container, welche mit renderausgaben verbunden werden können, solange diese aus einem LE-Views ordner im Vault importiert werden können.
-  - Listen, Dropdown Menüs und andere Elemente, welche mit Daten aus anderen Plugins gefüttert werden können, solange diese aus einem LE-Data Ordner im Vault importiert weden können.
+Der Layout-Editor ist ein Obsidian-Plugin zum Entwerfen komplexer Formular- und Dashboard-Layouts, die von anderen Plugins wiederverwendet werden können. Der Editor stellt eine Canvas-Ansicht, Element-Bibliotheken sowie eine Persistenzschicht für Layout-Dateien bereit.
 
-  Eingebaute Layouts enthalten:
-  - Das Layout des Layout Editors selbst, damit User es selber nach ihrem Bedarf anpassen können.
+## Kernfunktionen
 
-  Eingebaute LE-Functions enthalten:
-  - ein Exporter, welcher Daten aus UI Elementen in einem importfreundlichen Format in LE-Data speichert
-  - Alle Funktionen des Editors, damit User den Editor selber nach eigeneme Bedarf anpassen können.
+- **Interaktive Editor-Ansicht** – Öffne den Layout-Editor als eigene Obsidian-View mit Canvas, Strukturbaum und Inspector, um Layouts visuell zu modellieren.
+- **Erweiterbare Elementbibliothek** – Registriere eigene UI-Komponenten und View-Bindings über die öffentliche Plugin-API.
+- **Layout-Bibliothek** – Speichere Layouts im Vault, lade sie erneut oder teile sie mit anderen Plugins.
+- **Versionierte Plugin-API** – `apiVersion` kennzeichnet das veröffentlichte API-Level, Helfer wie `isApiVersionAtLeast` und `withMinimumApiVersion` erlauben defensive Feature-Gates.
+- **Schema-Migrationen** – Gespeicherte Layouts enthalten ein `schemaVersion`-Feld. Die Bibliothek führt Migrationen zentral aus und warnt bei fehlenden Pfaden oder zukünftigen Versionen.
+
+## Nutzung & Workflows
+
+1. **Editor öffnen**: Über das Ribbon-Icon oder den Befehl „Layout Editor öffnen“ wird die dedizierte View aktiviert.
+2. **Layouts modellieren**: Elemente aus der Bibliothek auf die Arbeitsfläche ziehen, Eigenschaften im Inspector anpassen und optional View-Bindings zuweisen.
+3. **Layout speichern**: Über die Speicher-Controls wird ein Layout unter einer ID im Vault abgelegt. Bestehende Einträge werden migrationssicher überschrieben.
+4. **Layouts laden/teilen**: Plugins können via API Layouts laden und mit `schemaVersion`-Checks gegen das aktuelle Schema absichern.
+
+## Öffentliche API & Versionierung
+
+- Jede Instanz von `LayoutEditorPlugin.getApi()` liefert ein Objekt mit `apiVersion` sowie den Helfern `isApiVersionAtLeast`, `assertApiVersion` und `withMinimumApiVersion`.
+- Neue Features werden hinter Versionsprüfungen freigeschaltet. Konsumenten können so optional auf neue Funktionen reagieren, ohne ältere Plugin-Versionen zu brechen.
+- Die aktuell ausgelieferte API-Version lautet `1.0.0`.
+
+### Kompatibilitäts-Helfer
+
+```ts
+const api = plugin.getApi();
+api.assertApiVersion("1.0.0");
+const result = api.withMinimumApiVersion("1.1.0", () => useNewFeature());
+```
+
+Weitere Details zur API-Evolution und Migrationsregeln sind unter [`docs/api-migrations.md`](docs/api-migrations.md) beschrieben.
+
+## Layout-Schema-Migrationen
+
+Gespeicherte Layout-Dateien werden mit einem `schemaVersion` versehen. Beim Laden werden sie durch einen zentralen Runner (`runLayoutSchemaMigrations`) geführt. Dieser
+
+- aktualisiert Legacy-Dateien auf das aktuelle Schema,
+- gibt Warnungen aus, sobald Migrationen angewendet werden oder Pfade fehlen,
+- verweigert Layouts, deren Schema neuer ist als die implementierte Version.
+
+Durch Tests (`tests/api-versioning.test.ts`) wird sichergestellt, dass Legacy-Layouts weiterhin eingelesen werden können und zukünftige Schemen defensiv abgelehnt werden.
+
+## Entwicklung & Tests
+
+- Abhängigkeiten installieren: `npm install`
+- Tests ausführen: `npm test`
+
+Die Tests bundlen über esbuild und führen alle `*.test.ts`-Dateien in `layout-editor/tests` aus.
+
+## Weiterführende Dokumentation
+
+- [`docs/api-migrations.md`](docs/api-migrations.md) – Richtlinien für API-Änderungen und Layout-Migrationen.
+

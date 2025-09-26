@@ -1,12 +1,117 @@
 // src/plugins/layout-editor/layout-library.ts
-import { App, TFile, TFolder, normalizePath } from "obsidian";
+import type { App, TFile, TFolder } from "obsidian";
 import { LayoutBlueprint, LayoutElement, SavedLayout } from "./types";
+
+export const LAYOUT_SCHEMA_VERSION = 1;
+export const MIN_SUPPORTED_LAYOUT_SCHEMA_VERSION = 0;
+
+export interface VersionedSavedLayout extends SavedLayout {
+    schemaVersion: number;
+}
+
+type LayoutSchemaMigration = (layout: VersionedSavedLayout) => VersionedSavedLayout;
+
+const LAYOUT_SCHEMA_MIGRATIONS = new Map<number, LayoutSchemaMigration>([
+    [
+        0,
+        layout => ({
+            ...layout,
+            schemaVersion: 1,
+            elements: layout.elements.map(element => ({
+                ...element,
+                attributes: Array.isArray(element.attributes) ? element.attributes : [],
+            })),
+        }),
+    ],
+]);
 
 const LAYOUT_FOLDER = "LayoutEditor/Layouts";
 const LEGACY_LAYOUT_FOLDERS = ["Layout Editor/Layouts"] as const;
 const LAYOUT_FOLDER_CANDIDATES = [LAYOUT_FOLDER, ...LEGACY_LAYOUT_FOLDERS];
 
 const FORBIDDEN_ID_CHARS = /[\\/]/;
+
+type FileStatLike = { ctime?: number; mtime?: number };
+
+function isFile(value: unknown): value is TFile & { extension: string; basename: string; stat: FileStatLike; path: string } {
+    if (!value || typeof value !== "object") return false;
+    const candidate = value as Partial<TFile> & { extension?: unknown; basename?: unknown; stat?: unknown; path?: unknown };
+    return (
+        typeof candidate.extension === "string" &&
+        typeof candidate.basename === "string" &&
+        typeof candidate.path === "string" &&
+        !!candidate.stat &&
+        typeof (candidate.stat as FileStatLike).ctime !== "undefined" &&
+        typeof (candidate.stat as FileStatLike).mtime !== "undefined"
+    );
+}
+
+function isFolder(value: unknown): value is TFolder & { children: unknown[]; path: string } {
+    if (!value || typeof value !== "object") return false;
+    const candidate = value as Partial<TFolder> & { children?: unknown; path?: unknown };
+    return Array.isArray(candidate.children) && typeof candidate.path === "string";
+}
+
+function normalizePath(input: string): string {
+    if (!input) {
+        return "";
+    }
+    const replaced = input.replace(/\\+/g, "/");
+    const compacted = replaced.replace(/\/+/g, "/");
+    return compacted.replace(/^\/+/, "");
+}
+
+function normalizeSchemaVersion(value: unknown): number {
+    if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+        return value;
+    }
+    return 0;
+}
+
+export function runLayoutSchemaMigrations(
+    layout: VersionedSavedLayout,
+    warn: (message: string) => void = message => console.warn(message),
+): VersionedSavedLayout | null {
+    let currentVersion = normalizeSchemaVersion(layout.schemaVersion);
+    let migrated: VersionedSavedLayout = { ...layout, schemaVersion: currentVersion };
+
+    if (currentVersion > LAYOUT_SCHEMA_VERSION) {
+        warn(
+            `Layout '${layout.id}' verwendet Schema-Version ${currentVersion}, unterstützt wird maximal ${LAYOUT_SCHEMA_VERSION}.`,
+        );
+        return null;
+    }
+
+    while (currentVersion < LAYOUT_SCHEMA_VERSION) {
+        const migration = LAYOUT_SCHEMA_MIGRATIONS.get(currentVersion);
+        if (!migration) {
+            warn(
+                `Es fehlt eine Migration von Schema v${currentVersion} auf v${currentVersion + 1} für Layout '${layout.id}'.`,
+            );
+            return null;
+        }
+        const next = migration(migrated);
+        const nextVersion = normalizeSchemaVersion(next.schemaVersion);
+        if (nextVersion <= currentVersion) {
+            warn(
+                `Migration von Schema v${currentVersion} lieferte keine höhere Version für Layout '${layout.id}'. Vorgang abgebrochen.`,
+            );
+            return null;
+        }
+        warn(`Layout '${layout.id}' wurde von Schema v${currentVersion} auf v${nextVersion} migriert.`);
+        migrated = { ...next, schemaVersion: nextVersion };
+        currentVersion = nextVersion;
+    }
+
+    if (currentVersion < MIN_SUPPORTED_LAYOUT_SCHEMA_VERSION) {
+        warn(
+            `Layout '${layout.id}' nutzt eine nicht unterstützte Schema-Version ${currentVersion}. Erwartet wird mindestens ${MIN_SUPPORTED_LAYOUT_SCHEMA_VERSION}.`,
+        );
+        return null;
+    }
+
+    return migrated;
+}
 
 async function ensureFolderPath(app: App, folderPath: string): Promise<void> {
     const normalized = normalizePath(folderPath);
@@ -29,7 +134,7 @@ function findLayoutFile(app: App, fileName: string): TFile | null {
     for (const folder of LAYOUT_FOLDER_CANDIDATES) {
         const path = normalizePath(`${folder}/${fileName}`);
         const file = app.vault.getAbstractFileByPath(path);
-        if (file instanceof TFile) {
+        if (isFile(file)) {
             return file;
         }
     }
@@ -41,9 +146,9 @@ function collectLayoutFiles(app: App): TFile[] {
     const files: TFile[] = [];
     for (const folder of LAYOUT_FOLDER_CANDIDATES) {
         const abstract = app.vault.getAbstractFileByPath(normalizePath(folder));
-        if (!(abstract instanceof TFolder)) continue;
+        if (!isFolder(abstract)) continue;
         for (const child of abstract.children) {
-            if (!(child instanceof TFile) || child.extension !== "json") continue;
+            if (!isFile(child) || child.extension !== "json") continue;
             if (seen.has(child.basename)) continue;
             seen.add(child.basename);
             files.push(child);
@@ -85,7 +190,10 @@ function resolveLayoutId(candidate?: string): string {
     return trimmed;
 }
 
-export async function saveLayoutToLibrary(app: App, payload: LayoutBlueprint & { name: string; id?: string }): Promise<SavedLayout> {
+export async function saveLayoutToLibrary(
+    app: App,
+    payload: LayoutBlueprint & { name: string; id?: string },
+): Promise<VersionedSavedLayout> {
     const id = resolveLayoutId(payload.id);
     const fileName = createFileName(id);
     let existing = findLayoutFile(app, fileName);
@@ -97,17 +205,18 @@ export async function saveLayoutToLibrary(app: App, payload: LayoutBlueprint & {
     const canvasWidth = ensureCanvasDimension(payload.canvasWidth, "Breite");
     const canvasHeight = ensureCanvasDimension(payload.canvasHeight, "Höhe");
     const elements = normalizeElementsStrict(payload.elements);
-    const entry: SavedLayout = {
+    const entry: VersionedSavedLayout = {
         id,
         name: sanitizeName(payload.name),
         canvasWidth,
         canvasHeight,
         elements,
-        createdAt: existing instanceof TFile ? (await readLayoutMeta(app, existing))?.createdAt ?? now : now,
+        createdAt: isFile(existing) ? (await readLayoutMeta(app, existing))?.createdAt ?? now : now,
         updatedAt: now,
+        schemaVersion: LAYOUT_SCHEMA_VERSION,
     };
     const body = JSON.stringify(entry, null, 2);
-    if (existing instanceof TFile) {
+    if (isFile(existing)) {
         await app.vault.modify(existing, body);
     } else {
         await app.vault.create(targetPath, body);
@@ -228,10 +337,10 @@ function normalizeAlign(value: unknown): LayoutElement["layout"]["align"] {
     return "stretch";
 }
 
-async function readLayoutMeta(app: App, file: TFile): Promise<SavedLayout | null> {
+async function readLayoutMeta(app: App, file: TFile): Promise<VersionedSavedLayout | null> {
     try {
         const raw = await app.vault.read(file);
-        const parsed = JSON.parse(raw) as Partial<SavedLayout> & Record<string, unknown>;
+        const parsed = JSON.parse(raw) as Partial<VersionedSavedLayout> & Record<string, unknown>;
         if (!parsed || typeof parsed !== "object") return null;
         const canvasWidth = parseDimension(parsed.canvasWidth);
         const canvasHeight = parseDimension(parsed.canvasHeight);
@@ -243,7 +352,7 @@ async function readLayoutMeta(app: App, file: TFile): Promise<SavedLayout | null
         const fallbackUpdated = new Date(file.stat.mtime || Date.now()).toISOString();
         const fileId = file.basename;
         const resolvedName = typeof parsed.name === "string" && parsed.name.trim() ? parsed.name : fileId;
-        return {
+        const base: VersionedSavedLayout = {
             id: fileId,
             name: resolvedName,
             canvasWidth,
@@ -251,17 +360,24 @@ async function readLayoutMeta(app: App, file: TFile): Promise<SavedLayout | null
             elements,
             createdAt: typeof parsed.createdAt === "string" ? parsed.createdAt : fallbackCreated,
             updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : fallbackUpdated,
+            schemaVersion: normalizeSchemaVersion(parsed.schemaVersion),
         };
+        const warn = (message: string) => console.warn(`[LayoutEditor] ${message} (${file.path})`);
+        const migrated = runLayoutSchemaMigrations(base, warn);
+        if (!migrated) {
+            return null;
+        }
+        return migrated;
     } catch (error) {
         console.error("Failed to read layout file", error);
         return null;
     }
 }
 
-export async function listSavedLayouts(app: App): Promise<SavedLayout[]> {
+export async function listSavedLayouts(app: App): Promise<VersionedSavedLayout[]> {
     await ensureLayoutFolder(app);
     const files = collectLayoutFiles(app);
-    const out: SavedLayout[] = [];
+    const out: VersionedSavedLayout[] = [];
     for (const file of files) {
         const meta = await readLayoutMeta(app, file);
         if (meta) out.push(meta);
@@ -270,10 +386,10 @@ export async function listSavedLayouts(app: App): Promise<SavedLayout[]> {
     return out;
 }
 
-export async function loadSavedLayout(app: App, id: string): Promise<SavedLayout | null> {
+export async function loadSavedLayout(app: App, id: string): Promise<VersionedSavedLayout | null> {
     await ensureLayoutFolder(app);
     const fileName = createFileName(id);
     const file = findLayoutFile(app, fileName);
-    if (!(file instanceof TFile)) return null;
+    if (!isFile(file)) return null;
     return await readLayoutMeta(app, file);
 }
