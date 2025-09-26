@@ -20,6 +20,12 @@ import {
     createElementsSelect,
     ensureFieldLabelFor,
 } from "./elements/ui";
+import {
+    createLayoutEditorStrings,
+    formatLayoutString,
+    type LayoutEditorLocaleOverrides,
+    type LayoutEditorLocaleStrings,
+} from "./i18n/strings";
 
 export interface InspectorCallbacks {
     ensureContainerDefaults(element: LayoutElement): void;
@@ -43,16 +49,19 @@ export interface InspectorDependencies {
     canvasWidth: number;
     canvasHeight: number;
     callbacks: InspectorCallbacks;
+    locale?: LayoutEditorLocaleStrings;
+    localeOverrides?: LayoutEditorLocaleOverrides;
 }
 
 export function renderInspectorPanel(deps: InspectorDependencies) {
     const { host, element } = deps;
     host.empty();
-    const heading = createElementsHeading(host, 3, "Eigenschaften");
+    const strings = deps.locale ?? createLayoutEditorStrings(deps.localeOverrides);
+    const heading = createElementsHeading(host, 3, strings.inspector.heading);
     heading.addClass("sm-le-panel__heading");
 
     if (!element) {
-        host.createDiv({ cls: "sm-le-empty", text: "Wähle ein Element, um Details anzupassen." });
+        host.createDiv({ cls: "sm-le-empty", text: strings.inspector.emptyState });
         return;
     }
 
@@ -64,11 +73,16 @@ export function renderInspectorPanel(deps: InspectorDependencies) {
     }
     const parentContainer = element.parentId ? elements.find(el => el.id === element.parentId) : null;
 
-    host.createDiv({ cls: "sm-le-meta", text: `Typ: ${getElementTypeLabel(element.type)}` });
+    host.createDiv({
+        cls: "sm-le-meta",
+        text: formatLayoutString(strings.inspector.typeLabel, {
+            type: getElementTypeLabel(element.type),
+        }),
+    });
 
     host.createDiv({
         cls: "sm-le-hint",
-        text: "Benennungen und Eigenschaften pflegst du hier im Inspector. Reine Textblöcke bearbeitest du direkt im Arbeitsbereich.",
+        text: strings.inspector.hint,
     });
 
     const component = getLayoutElementComponent(element.type);
@@ -84,10 +98,10 @@ export function renderInspectorPanel(deps: InspectorDependencies) {
             for (const id of ancestors) blockedContainers.add(id);
             blockedContainers.add(element.id);
         }
-        const containerField = createElementsField(host, { label: "Container" });
+        const containerField = createElementsField(host, { label: strings.inspector.container.label });
         containerField.fieldEl.addClass("sm-le-field");
         const options = [
-            { value: "", label: "Kein Container" },
+            { value: "", label: strings.inspector.container.noneOption },
             ...containers
                 .filter(container => !blockedContainers.has(container.id))
                 .map(container => ({
@@ -106,17 +120,17 @@ export function renderInspectorPanel(deps: InspectorDependencies) {
         };
     }
 
-    const attributesField = createElementsField(host, { label: "Attribute" });
+    const attributesField = createElementsField(host, { label: strings.inspector.attributes.label });
     attributesField.fieldEl.addClass("sm-le-field");
     const attributesChip = attributesField.controlEl.createDiv({ cls: "sm-le-attr" });
     attributesChip.setText(getAttributeSummary(element.attributes));
 
     const actions = host.createDiv({ cls: "sm-le-actions" });
-    const deleteBtn = createElementsButton(actions, { label: "Element löschen", variant: "warning" });
+    const deleteBtn = createElementsButton(actions, { label: strings.inspector.actions.delete, variant: "warning" });
     deleteBtn.classList.add("mod-warning");
     deleteBtn.onclick = () => callbacks.deleteElement(element.id);
 
-    const sizeField = createElementsField(host, { label: "Größe (px)", layout: "inline" });
+    const sizeField = createElementsField(host, { label: strings.inspector.size.label, layout: "inline" });
     sizeField.fieldEl.addClass("sm-le-field");
     const widthInput = createElementsInput(sizeField.controlEl, {
         type: "number",
@@ -140,7 +154,7 @@ export function renderInspectorPanel(deps: InspectorDependencies) {
             callbacks.applyContainerLayout(parentContainer);
         }
     };
-    sizeField.controlEl.createSpan({ cls: "sm-elements-inline-text", text: "×" });
+    sizeField.controlEl.createSpan({ cls: "sm-elements-inline-text", text: strings.inspector.size.separator });
     const heightInput = createElementsInput(sizeField.controlEl, {
         type: "number",
         min: MIN_ELEMENT_SIZE,
@@ -163,7 +177,7 @@ export function renderInspectorPanel(deps: InspectorDependencies) {
         }
     };
 
-    const positionField = createElementsField(host, { label: "Position (px)", layout: "inline" });
+    const positionField = createElementsField(host, { label: strings.inspector.position.label, layout: "inline" });
     positionField.fieldEl.addClass("sm-le-field");
     const posXInput = createElementsInput(positionField.controlEl, {
         type: "number",
@@ -187,7 +201,7 @@ export function renderInspectorPanel(deps: InspectorDependencies) {
             callbacks.applyContainerLayout(parentContainer);
         }
     };
-    positionField.controlEl.createSpan({ cls: "sm-elements-inline-text", text: "," });
+    positionField.controlEl.createSpan({ cls: "sm-elements-inline-text", text: strings.inspector.position.separator });
     const posYInput = createElementsInput(positionField.controlEl, {
         type: "number",
         min: 0,
@@ -222,28 +236,33 @@ export function renderInspectorPanel(deps: InspectorDependencies) {
                 host: target ?? sections.header,
                 element,
                 callbacks,
-                label: label ?? "Bezeichnung",
+                label: label ?? strings.inspector.fields.labelDefault,
             }),
         renderPlaceholderField: ({ label, host: target } = {}) =>
             renderPlaceholderField({
                 host: target ?? sections.body,
                 element,
                 callbacks,
-                label: label ?? "Platzhalter",
+                label: label ?? strings.inspector.fields.placeholderDefault,
             }),
         renderOptionsEditor: ({ host: target } = {}) =>
-            renderOptionsEditor({ host: target ?? sections.body, element, callbacks }),
+            renderOptionsEditor({ host: target ?? sections.body, element, callbacks, strings }),
         renderContainerLayoutControls: ({ host: target } = {}) =>
-            renderContainerLayoutControls({ host: target ?? sections.body, element, callbacks }),
+            renderContainerLayoutControls({ host: target ?? sections.body, element, callbacks, strings }),
     };
 
     component?.renderInspector?.(inspectorContext);
 
-    const meta = createElementsMeta(host, `Fläche: ${Math.round(element.width * element.height)} px²`);
+    const meta = createElementsMeta(
+        host,
+        formatLayoutString(strings.inspector.areaLabel, {
+            area: String(Math.round(element.width * element.height)),
+        }),
+    );
     meta.addClass("sm-le-meta");
 
     if (isContainer) {
-        renderContainerInspectorSections({ element, host, elements, callbacks, definitions });
+        renderContainerInspectorSections({ element, host, elements, callbacks, definitions, strings });
     } else {
         renderAttributeSelector({ element, attributesChip });
     }
@@ -255,13 +274,19 @@ type ContainerInspectorOptions = {
     elements: LayoutElement[];
     callbacks: InspectorCallbacks;
     definitions: LayoutElementDefinition[];
+    strings: LayoutEditorLocaleStrings;
 };
 
 function renderContainerInspectorSections(options: ContainerInspectorOptions) {
-    const { element, host, elements, callbacks, definitions } = options;
-    const quickAddField = createElementsField(host, { label: "Neues Element erstellen", layout: "stack" });
+    const { element, host, elements, callbacks, definitions, strings } = options;
+    const quickAddField = createElementsField(host, {
+        label: strings.inspector.container.quickAdd.fieldLabel,
+        layout: "stack",
+    });
     quickAddField.fieldEl.addClass("sm-le-field");
-    const quickAddBtn = createElementsButton(quickAddField.controlEl, { label: "Element hinzufügen" });
+    const quickAddBtn = createElementsButton(quickAddField.controlEl, {
+        label: strings.inspector.container.quickAdd.buttonLabel,
+    });
     quickAddBtn.classList.add("sm-le-inline-add", "sm-le-inline-add--menu");
     quickAddBtn.onclick = ev => {
         ev.preventDefault();
@@ -283,11 +308,14 @@ function renderContainerInspectorSections(options: ContainerInspectorOptions) {
         openEditorMenu({ anchor: quickAddBtn, entries, event: ev });
     };
 
-    const childField = createElementsField(host, { label: "Zugeordnete Elemente", layout: "stack" });
+    const childField = createElementsField(host, {
+        label: strings.inspector.container.children.fieldLabel,
+        layout: "stack",
+    });
     childField.fieldEl.addClass("sm-le-field");
     const addRow = childField.controlEl.createDiv({ cls: "sm-le-container-add" });
     const addSelect = createElementsSelect(addRow, {
-        options: [{ value: "", label: "Element auswählen…" }],
+        options: [{ value: "", label: strings.inspector.container.children.selectionPlaceholder }],
         value: "",
     });
     const blockedIds = new Set<string>([element.id]);
@@ -303,7 +331,10 @@ function renderContainerInspectorSections(options: ContainerInspectorOptions) {
             const parentElement = elements.find(el => el.id === candidate.parentId);
             if (parentElement) {
                 const parentName = parentElement.label || getElementTypeLabel(parentElement.type);
-                optionText = `${textBase} (in ${parentName})`;
+                optionText = formatLayoutString(strings.inspector.container.children.withinParentTemplate, {
+                    child: textBase,
+                    parent: parentName,
+                });
             }
         }
         const option = document.createElement("option");
@@ -311,7 +342,7 @@ function renderContainerInspectorSections(options: ContainerInspectorOptions) {
         option.text = optionText;
         addSelect.add(option);
     }
-    const addButton = createElementsButton(addRow, { label: "Hinzufügen" });
+    const addButton = createElementsButton(addRow, { label: strings.inspector.container.children.addButtonLabel });
     addButton.onclick = ev => {
         ev.preventDefault();
         const target = addSelect.value;
@@ -327,28 +358,28 @@ function renderContainerInspectorSections(options: ContainerInspectorOptions) {
               .filter((child): child is LayoutElement => !!child)
         : [];
     if (!children.length) {
-        childList.createDiv({ cls: "sm-le-empty", text: "Keine Elemente verknüpft." });
+        childList.createDiv({ cls: "sm-le-empty", text: strings.inspector.container.children.emptyState });
     } else {
         for (const [idx, child] of children.entries()) {
             const row = childList.createDiv({ cls: "sm-le-container-child" });
             row.createSpan({ cls: "sm-le-container-child__label", text: child.label || getElementTypeLabel(child.type) });
             const controls = row.createDiv({ cls: "sm-le-container-child__actions" });
             const upBtn = createElementsButton(controls, { label: "↑" });
-            upBtn.setAttr("title", "Nach oben");
+            upBtn.setAttr("title", strings.inspector.container.children.moveUpTitle);
             upBtn.disabled = idx === 0;
             upBtn.onclick = ev => {
                 ev.preventDefault();
                 callbacks.moveChildInContainer(element, child.id, -1);
             };
             const downBtn = createElementsButton(controls, { label: "↓" });
-            downBtn.setAttr("title", "Nach unten");
+            downBtn.setAttr("title", strings.inspector.container.children.moveDownTitle);
             downBtn.disabled = idx === children.length - 1;
             downBtn.onclick = ev => {
                 ev.preventDefault();
                 callbacks.moveChildInContainer(element, child.id, 1);
             };
             const removeBtn = createElementsButton(controls, { label: "✕" });
-            removeBtn.setAttr("title", "Entfernen");
+            removeBtn.setAttr("title", strings.inspector.container.children.removeTitle);
             removeBtn.onclick = ev => {
                 ev.preventDefault();
                 callbacks.assignElementToContainer(child.id, null);
@@ -422,16 +453,27 @@ function renderLabelField(options: LabelFieldOptions) {
     return field.fieldEl;
 }
 
-type OptionsEditorOptions = { host: HTMLElement; element: LayoutElement; callbacks: InspectorCallbacks };
+type OptionsEditorOptions = {
+    host: HTMLElement;
+    element: LayoutElement;
+    callbacks: InspectorCallbacks;
+    strings: LayoutEditorLocaleStrings;
+};
 
 function renderOptionsEditor(options: OptionsEditorOptions) {
-    const { host, element, callbacks } = options;
-    const field = createElementsField(host, { label: "Optionen", layout: "stack" });
+    const { host, element, callbacks, strings } = options;
+    const field = createElementsField(host, {
+        label: strings.inspector.optionsEditor.label,
+        layout: "stack",
+    });
     field.fieldEl.addClass("sm-le-field");
     const optionList = field.controlEl.createDiv({ cls: "sm-le-inline-options" });
     const optionValues = element.options ?? [];
     if (!optionValues.length) {
-        optionList.createDiv({ cls: "sm-le-inline-options__empty", text: "Noch keine Optionen." });
+        optionList.createDiv({
+            cls: "sm-le-inline-options__empty",
+            text: strings.inspector.optionsEditor.emptyState,
+        });
     } else {
         optionValues.forEach((opt, index) => {
             const row = optionList.createDiv({ cls: "sm-le-inline-option" });
@@ -450,7 +492,7 @@ function renderOptionsEditor(options: OptionsEditorOptions) {
             };
             const remove = createElementsButton(row, { label: "✕" });
             remove.classList.add("sm-le-inline-option__remove");
-            remove.setAttr("title", "Option entfernen");
+            remove.setAttr("title", strings.inspector.optionsEditor.removeTitle);
             remove.onclick = ev => {
                 ev.preventDefault();
                 const nextOptions = (element.options ?? []).filter((_, idx) => idx !== index);
@@ -462,12 +504,16 @@ function renderOptionsEditor(options: OptionsEditorOptions) {
             };
         });
     }
-    const addButton = createElementsButton(field.controlEl, { label: "Option hinzufügen" });
+    const addButton = createElementsButton(field.controlEl, {
+        label: strings.inspector.optionsEditor.addButtonLabel,
+    });
     addButton.classList.add("sm-le-inline-add");
     addButton.onclick = ev => {
         ev.preventDefault();
         const nextOptions = [...(element.options ?? [])];
-        const labelText = `Option ${nextOptions.length + 1}`;
+        const labelText = formatLayoutString(strings.inspector.optionsEditor.optionTemplate, {
+            index: String(nextOptions.length + 1),
+        });
         nextOptions.push(labelText);
         element.options = nextOptions;
         finalizeElementChange(element, callbacks, { rerender: true });
@@ -475,18 +521,26 @@ function renderOptionsEditor(options: OptionsEditorOptions) {
     return field.fieldEl;
 }
 
-type ContainerLayoutOptions = { host: HTMLElement; element: LayoutElement; callbacks: InspectorCallbacks };
+type ContainerLayoutOptions = {
+    host: HTMLElement;
+    element: LayoutElement;
+    callbacks: InspectorCallbacks;
+    strings: LayoutEditorLocaleStrings;
+};
 
 function renderContainerLayoutControls(options: ContainerLayoutOptions) {
-    const { host, element, callbacks } = options;
+    const { host, element, callbacks, strings } = options;
     if (!element.layout) return host;
-    const field = createElementsField(host, { label: "Layout", layout: "stack" });
+    const field = createElementsField(host, {
+        label: strings.inspector.container.layout.fieldLabel,
+        layout: "stack",
+    });
     field.fieldEl.addClass("sm-le-field");
     const controls = field.controlEl.createDiv({ cls: "sm-le-preview__layout" });
     const layout = element.layout;
 
     const gapWrap = controls.createDiv({ cls: "sm-le-inline-control" });
-    gapWrap.createSpan({ text: "Abstand" });
+    gapWrap.createSpan({ text: strings.inspector.container.layout.gapLabel });
     const gapInput = createElementsInput(gapWrap, { type: "number", min: 0 });
     gapInput.addClass("sm-le-inline-number");
     gapInput.value = String(Math.round(layout.gap));
@@ -500,7 +554,7 @@ function renderContainerLayoutControls(options: ContainerLayoutOptions) {
     };
 
     const paddingWrap = controls.createDiv({ cls: "sm-le-inline-control" });
-    paddingWrap.createSpan({ text: "Innenabstand" });
+    paddingWrap.createSpan({ text: strings.inspector.container.layout.paddingLabel });
     const paddingInput = createElementsInput(paddingWrap, { type: "number", min: 0 });
     paddingInput.addClass("sm-le-inline-number");
     paddingInput.value = String(Math.round(layout.padding));
@@ -514,21 +568,21 @@ function renderContainerLayoutControls(options: ContainerLayoutOptions) {
     };
 
     const alignWrap = controls.createDiv({ cls: "sm-le-inline-control" });
-    alignWrap.createSpan({ text: "Ausrichtung" });
+    alignWrap.createSpan({ text: strings.inspector.container.layout.alignLabel });
     const containerType = element.type;
     const alignOptions: Array<[LayoutContainerAlign, string]> = isVerticalContainer(containerType)
-        ? [
-              ["start", "Links"],
-              ["center", "Zentriert"],
-              ["end", "Rechts"],
-              ["stretch", "Breite"],
-          ]
-        : [
-              ["start", "Oben"],
-              ["center", "Zentriert"],
-              ["end", "Unten"],
-              ["stretch", "Höhe"],
-          ];
+        ? ([
+              ["start", strings.inspector.container.layout.alignOptions.vertical.start],
+              ["center", strings.inspector.container.layout.alignOptions.vertical.center],
+              ["end", strings.inspector.container.layout.alignOptions.vertical.end],
+              ["stretch", strings.inspector.container.layout.alignOptions.vertical.stretch],
+          ] as Array<[LayoutContainerAlign, string]>)
+        : ([
+              ["start", strings.inspector.container.layout.alignOptions.horizontal.start],
+              ["center", strings.inspector.container.layout.alignOptions.horizontal.center],
+              ["end", strings.inspector.container.layout.alignOptions.horizontal.end],
+              ["stretch", strings.inspector.container.layout.alignOptions.horizontal.stretch],
+          ] as Array<[LayoutContainerAlign, string]>);
     const alignSelect = createElementsSelect(alignWrap, {
         options: alignOptions.map(([value, labelText]) => ({ value, label: labelText })),
         value: layout.align,
