@@ -1,4 +1,4 @@
-import type { Setting } from "obsidian";
+import type { Setting, ToggleComponent } from "obsidian";
 
 export type DomainConfigurationSource = "builtin" | "vault";
 
@@ -54,20 +54,37 @@ export function onDomainConfigurationSourceChange(
     return () => listeners.delete(listener);
 }
 
-export function renderDomainConfigurationSetting(setting: Setting): void {
+export function renderDomainConfigurationSetting(setting: Setting): () => void {
+    let toggleComponent: ToggleComponent | null = null;
+
     setting
         .setName("Domänenquelle")
         .setDesc(
             "Wähle, ob Layout-Definitionen und Seeds aus den Plug-in-Defaults oder einer JSON-Datei im Vault geladen werden.",
         )
         .addToggle(toggle => {
-            toggle
+            toggleComponent = toggle
                 .setValue(activeSource === "vault")
                 .setTooltip("Vault-Konfiguration aktivieren")
                 .onChange(value => {
                     setDomainConfigurationSource(value ? "vault" : "builtin");
                 });
         });
+
+    const unsubscribe = onDomainConfigurationSourceChange(source => {
+        if (!toggleComponent) {
+            return;
+        }
+        const shouldBeVault = source === "vault";
+        if (toggleComponent.getValue() !== shouldBeVault) {
+            toggleComponent.setValue(shouldBeVault);
+        }
+    });
+
+    return () => {
+        unsubscribe();
+        toggleComponent = null;
+    };
 }
 
 export function resetDomainConfigurationSourceForTesting(): void {
