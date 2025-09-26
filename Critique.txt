@@ -1,0 +1,89 @@
+# Layout Editor Plugin – Strukturanalyse und Kritik
+
+## 1. Architektur und Verantwortlichkeiten
+
+### 1.1 Monolithische View-Implementierung
+- `LayoutEditorView` bündelt den kompletten Editor (State, Canvas, Inspector, Baum, Import/Export, Historie, UI-Events) in einer einzelnen Datei mit über 1.100 Zeilen (`src/view.ts`, Zeilen 41–1120). Dadurch entsteht ein God-Object, das jede Änderung riskant und schwer nachvollziehbar macht.
+- Beispiel: `render()` erzeugt Header, Panels, Event-Handler und registriert globale Listener in einem Block (`src/view.ts`, Zeilen 226–320). Gleichzeitig orchestriert dieselbe Klasse Drag & Drop (`src/view.ts`, Zeilen 871–1042), Historie (`src/view.ts`, Zeilen 177–224) und Export (`src/view.ts`, Zeilen 832–858).
+- Verbesserungsvorschlag: Die View sollte in klar getrennte Presenter/Controller-Module für Canvas, Strukturbaum, Inspector und Persistenz aufgeteilt werden. Eine State-Management-Schicht (z. B. observable Store) könnte UI-Updates kapseln und Tests erleichtern.
+
+### 1.2 Fehlende Kompositionsschicht für UI-Komponenten
+- UI-Hilfen (Buttons, Felder, Status) liegen in `elements/ui.ts`, werden aber ausschließlich manuell über `createDiv()`/`addEventListener()` verkabelt. Komplexe Interaktionen (Panel-Resizing, Kamera, Drag & Drop) sind dadurch verstreut in anonymen Funktionen (`src/view.ts`, Zeilen 715–761, 929–1035), was Wartung erschwert.
+- Vorschlag: Eine modulare Komponentenarchitektur (z. B. Lit, Svelte oder zumindest Utility-Funktionen pro Panel) würde Wiederverwendung verbessern und klarere Lifecycle-Hooks für Event-Listener bieten.
+
+### 1.3 Datenmodell ohne Aggregations-Layer
+- Elemente werden als einfache Array-Struktur `LayoutElement[]` gehalten (`src/view.ts`, Zeile 42; `src/types.ts`, Zeilen 12–36). Zugriffe suchen ständig linear nach IDs (z. B. `this.elements.find(...)` in `createElement` und `renderStructure`).
+- Das führt zu O(n²)-Mustern für Container-Operationen (`src/view.ts`, Zeilen 871–1042) und komplizierte Konsistenzprüfungen, weil `children`-Listen redundant zu `parentId` gepflegt werden.
+- Besser wäre eine zentralisierte Modellschicht (z. B. Map nach ID + Baumstruktur) mit klaren Mutations-APIs, die Containerbeziehungen validiert und Snapshots effizient erzeugt.
+
+## 2. Funktionalität und Erweiterbarkeit
+
+### 2.1 Hart verdrahtete Domänenbegriffe
+- Attribute-Gruppen enthalten ausschließlich D&D-spezifische Felder (z. B. `alignmentLawChaos`, `damageResistancesList`, `spellsKnown`) (`src/definitions.ts`, Zeilen 92–183). Das widerspricht dem Ziel eines generischen Layout-Editors und erschwert Adaption für andere Domains.
+- Das Seed-Layout spiegelt ebenfalls ein starres Kreaturenformular wider (`src/seed-layouts.ts`, Zeilen 8–190). Ohne Konfigurationsoptionen ist das Plugin kaum auf andere Anwendungsfälle erweiterbar.
+- Verbesserung: Die Attribute sollten aus konfigurierbaren Quellen stammen (z. B. JSON aus dem Vault). Seed-Daten sollten optional sein oder per Settings konfigurierbar.
+
+### 2.2 Keine Versionierung der öffentlichen API
+- `LayoutEditorPluginApi` wird ohne Versionsangabe exportiert (`src/main.ts`, Zeilen 26–72). Änderungen an den Signaturen würden Dritt-Plugins sofort brechen.
+- Empfehlung: Eine `apiVersion`-Kennung sowie Deprecation-Strategie einführen und Dokumentation in README ergänzen.
+
+### 2.3 Fehlende Validierung bei Element-Definitionen
+- `registerLayoutElementDefinition` akzeptiert Definitionen ohne Pflichtfelder jenseits von `type` (`src/definitions.ts`, Zeilen 76–86). Fehlerhafte Register-Aufrufe können zur Laufzeit ungültige UI erzeugen, da `renderAddElementControl` keine defensiven Checks hat (`src/view.ts`, Zeilen 226–320).
+- Vorschlag: Schema-Validierung (z. B. Zod) einführen und fehlerhafte Definitionen ablehnen.
+
+## 3. Robustheit und Performance
+
+### 3.1 Unbegrenzte Undo/Redo-Historie
+- `LayoutHistory` speichert jede Mutation als Vollkopie aller Elemente (`src/history.ts`, Zeilen 5–70). Bei komplexen Layouts wächst der Speicherbedarf stark, Undo/Redo wird langsam.
+- Lösung: Limitierte Historie (z. B. 50 Schritte) und differenzbasierte Snapshots oder strukturierte Patches statt Deep-Clones.
+
+### 3.2 Ineffiziente Re-Renders
+- `renderElements()` iteriert bei jeder Änderung über alle Elemente, erzeugt fehlende DOM-Knoten und rendert den kompletten Baum erneut (`src/view.ts`, Zeilen 681–705). Der Strukturbaum wird vollständig neu aufgebaut (`src/view.ts`, Zeilen 871–1042).
+- Bei vielen Elementen führt das zu merkbaren Jank-Effekten. Ein diff-basiertes Rendering oder Virtual DOM würde Performance stabilisieren.
+
+### 3.3 Event-Listener ohne Lifecycle-Kapselung
+- Einige Listener werden direkt am DOM registriert (`stageViewportEl.addEventListener(...)`, `src/view.ts`, Zeilen 300–307; Drag-Events Zeilen 929–1035). Obwohl das DOM beim Schließen entfernt wird, fehlt eine zentrale Cleanup-Routine. Sollte `render()` erneut aufgerufen werden (z. B. bei Theme-Wechseln), würden Listener dupliziert.
+- Verbesserung: Konsistente Nutzung von `this.registerDomEvent` oder eine dedizierte `disposeStage()`-Methode.
+
+### 3.4 Fehlende Fehleroberfläche bei Persistenz
+- `saveLayoutToLibrary` wirft Fehler (z. B. ungültige ID) (`src/layout-library.ts`, Zeilen 60–104), aber die View zeigt nur einen generischen `Notice` (`src/view.ts`, Zeilen 1328–1360). Benutzer erfahren keine Details.
+- Empfehlung: Fehlerdetails im UI anzeigen und Logging strukturieren.
+
+## 4. Codequalität und Wartbarkeit
+
+### 4.1 Fehlende Tests und Tooling
+- `package.json` enthält nur ein `build`-Skript, keinerlei Tests oder Linting (`layout-editor/package.json`). Damit fehlt automatische Qualitätskontrolle.
+- Vorschlag: ESlint/Prettier konfigurieren, Unit-Tests für Registries und Layout-Library einführen.
+
+### 4.2 Typen nur als Alias
+- `LayoutElementType` ist ein Alias für `string` (`src/types.ts`, Zeile 3). Dadurch erkennen Tools falsche Typen nicht (z. B. Tippfehler bei `view-container`).
+- Lösung: Literal-Typen aus den Registries generieren oder `as const`-Manifeste exportieren.
+
+### 4.3 Redundante State-Information
+- `LayoutElement` pflegt sowohl `parentId` als auch `children` (`src/types.ts`, Zeilen 12–36). Die manuelle Synchronisierung verursacht zusätzliche Fehlerquellen (`src/view.ts`, Zeilen 646–676 und 1075–1113).
+- Empfehlung: Eine eindeutige Quelle der Wahrheit definieren (z. B. nur `parentId` speichern und Kinder dynamisch ableiten).
+
+### 4.4 Fehlende Trennung von UI-Texten
+- UI-Texte sind direkt im Code eingebettet (z. B. deutsche Strings im Inspector `src/inspector-panel.ts`, Zeilen 39–132). Internationalisierung oder Anpassung ist so kaum möglich.
+- Vorschlag: Strings in Ressourcen-Dateien oder Locale-Module auslagern.
+
+## 5. Technische Schulden und Risiken
+
+### 5.1 Seed-Daten und Attribute sind nicht modular
+- Änderungen an den Attributen oder Seed-Layouts erfordern Codeänderungen, weil Daten hartkodiert sind (`src/definitions.ts`, Zeilen 92–183; `src/seed-layouts.ts`, Zeilen 8–190). Das widerspricht dem modularen Anspruch und erschwert Community-Beiträge.
+- Abhilfe: Vault-basierte Konfigurationen (JSON/YAML) laden und im Plugin cachen.
+
+### 5.2 Fehlende Persistenz-Migrationen
+- Legacy-Pfade werden zwar gelesen (`src/layout-library.ts`, Zeilen 6–45), aber es gibt keine Migration oder Warnung für Benutzer. Unterschiedliche ID-Formate oder Schemaänderungen werden nicht versioniert.
+- Empfehlung: Layout-Dateien versionieren (`schemaVersion` im JSON) und Migrationen zentral verwalten.
+
+### 5.3 Fehlende Absicherung für externe View-Bindings
+- `view-registry.ts` lässt beliebige Bindings zu, prüft aber keine Duplikate oder Konflikte (`src/view-registry.ts`, Zeilen 16–44). Duplicate IDs überschreiben stillschweigend bestehende Einträge.
+- Vorschlag: Konflikte melden, optional Tags indexieren und UI-Feedback bereitstellen.
+
+### 5.4 Historien-Snapshot blockiert Streaming-Änderungen
+- Snapshot-basierte Historie (`src/history.ts`, Zeilen 5–70) verhindert, dass sehr große Layouts performant bearbeitet werden können. Ohne Lazy-Loading der Elemente ist das Plugin für „komplexe Layouts“ (README-Ziel) nur eingeschränkt nutzbar.
+- Empfehlung: Segmentierte Historie (z. B. Canvas-Größe separat, Element-Mutationen als Command-Objekte) und optionale Persistierung im Vault.
+
+## 6. Zusammenfassung
+Das Layout-Editor-Plugin besitzt eine solide Funktionsbasis, leidet aber unter starker Kopplung, fehlender Modularität und hart verdrahteten Domänenannahmen. Für den in der README angestrebten generischen Editor sollten Architektur, Datenmodell und Tooling modernisiert werden, um Erweiterbarkeit und langfristige Wartbarkeit sicherzustellen.
