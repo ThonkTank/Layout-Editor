@@ -26,3 +26,8 @@ Undo and redo both operate against the current snapshot rather than re-capturing
 2. Accurate replay of complex element operations (create, reorder, update, delete, and canvas changes).
 
 The diff-first approach keeps history storage proportional to the number of modifications instead of the size of the entire layout, while keeping the observable behaviour identical for consumers of the store.
+
+## Navigation
+
+- [Documentation index](./README.md)
+- Related: [Data model overview](./data-model-overview.md)

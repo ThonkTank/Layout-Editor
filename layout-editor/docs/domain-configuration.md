@@ -16,6 +16,11 @@ Validierungsregeln der Konfiguration sowie die notwendigen Schritte zur Aktivier
 
 Die Auswahl wird über `localStorage` pro Client gesichert, sodass der zuletzt verwendete Modus beim nächsten Start wiederhergestellt wird.
 
+## Weiterführend
+
+- [Dokumentenindex](./README.md)
+- Verwandt: [Layout-Bibliothek](./layout-library.md)
+
 ## Ablageort und Struktur der JSON-Datei
 
 * Dateipfad: `Layout Editor/domain-config.json` (relativ zum Vault-Stamm).

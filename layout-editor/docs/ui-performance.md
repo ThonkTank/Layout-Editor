@@ -32,3 +32,8 @@ The component layer now renders through a lightweight diffing helper that keeps 
 - Tests assert that removing a node tears down its scope-bound listeners, providing a regression guard against future leaks.
 
 Keeping these rules in mind ensures the rendering layer remains incremental, predictable, and cheap to update even for large documents.
+
+## Navigation
+
+- [Documentation index](./README.md)
+- Related: [View Registry](./view-registry.md)
