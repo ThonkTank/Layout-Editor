@@ -36,6 +36,9 @@ Reservierter Abschnitt für Erkenntnisse zu Kamera-Fit, Pointer-Capture und Scro
 ### Persistenz- & Exportanalyse (`persistence-analysis.md`)
 Hier folgen Bewertungen zur Klammerung von `canvasWidth`, Export-Snapshots und History-Rollbacks.
 
+### Ergebnisse-Review (`results-review.md`)
+Zusammenfassung der bestätigten Erkenntnisse, Hypothesenstände und empfohlenen Folgearbeiten über alle bisherigen Analysen hinweg.
+
 ## Weiterführende Navigation
 - Zurück zur [Projektübersicht im Root](../README.md) für Vision, Setup und globale Richtlinien.
 - [Docs-Verzeichnis](../docs/README.md) mit detaillierten Architektur- und API-Standards.
