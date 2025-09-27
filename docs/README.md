@@ -7,7 +7,8 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - [`api-migrations.md`](api-migrations.md) – Leitfaden für API-Änderungen, Layout-Schema-Migrationen sowie Qualitätschecks rund um Versionssprünge.
 - [`persistence-diagnostics.md`](persistence-diagnostics.md) – Monitoring-Checks und Leitplanken für Speicherintegrität im Clusterbetrieb.
 - [`stage-instrumentation.md`](stage-instrumentation.md) – Messpunkte, KPIs und Alarmierungs-Setup für Deploy- und Preview-Stages.
-- [`ui-components.md`](ui-components.md) – Soll-Referenz aller sichtbaren UI-Komponenten (Stage, Strukturbaum, Inspector, Banner, Menüs) inklusive Interaktionsmuster und bekannten Lücken.
+- [`ui-components.md`](ui-components.md) – Einstieg in die Soll-Referenz aller UI-Komponenten mit Verlinkungen zu Detailseiten.
+- [`ui-components/`](ui-components/) – Kapitelweise Detaildokumentation pro Komponente (Stage, Strukturbaum, Shell, Banner, DiffRenderer, Basisklassen, Primitives).
 - [`layout-editor-state-history.md`](layout-editor-state-history.md) – Soll-Zustand für Snapshots, History/Export-Flows und Telemetrie-Verpflichtungen.
 
 ## Setup-Workflows

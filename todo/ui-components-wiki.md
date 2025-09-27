@@ -1,10 +1,10 @@
 ---
-status: open
+status: closed
 priority: high
 area:
   - documentation
   - user-wiki
-owner: unassigned
+owner: docs-team
 tags:
   - ui-components
   - wiki
@@ -37,3 +37,9 @@ links:
 - Informationsarchitektur definieren (Navigationsstruktur, Querverweise zwischen Komponenten, Zuordnung zu Workflows im User-Wiki).
 - Abgleich mit technischen Dokumenten (`layout-editor/src/ui/components/README.md`, Tests, Performance-Guides), um konsistente Begriffe und Verantwortlichkeiten festzulegen.
 - Review-Checkliste entwerfen, damit künftige Komponenten denselben Dokumentationsstandard erfüllen.
+
+## Ergebnis (2025-02-14)
+- Neues Kapitel [`docs/ui-components/`](../docs/ui-components/) erstellt, inklusive Index und Einzelseiten für Stage, Strukturbaum, Shell, Status-Banner, DiffRenderer, UIComponent-Basis und Primitives.
+- `docs/ui-components.md` als Einstieg überarbeitet und mit technischen Readmes sowie Tests verknüpft.
+- Querverweise in [`layout-editor/src/ui/README.md`](../layout-editor/src/ui/README.md), [`layout-editor/src/ui/components/README.md`](../layout-editor/src/ui/components/README.md) und [`docs/README.md`](../docs/README.md) ergänzt.
+- Offene Accessibility- und Eskalationspunkte verbleiben in den bestehenden Tickets [`todo/ui-component-accessibility-spec.md`](ui-component-accessibility-spec.md), [`todo/ui-accessibility-and-diagrams.md`](ui-accessibility-and-diagrams.md) und [`todo/ui-component-status-ux-gaps.md`](ui-component-status-ux-gaps.md).

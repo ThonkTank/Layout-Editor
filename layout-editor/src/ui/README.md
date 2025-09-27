@@ -62,6 +62,7 @@ Für den Nutzerablauf siehe [User-Wiki › Setup-Workflows › View-Bindings](..
 - Performance-Guidelines für UI-Widgets: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
 - Projektweite Einordnung & Workflows: [`../../../README.md`](../../../README.md)
 - Nutzerzentrierte Workflows & Begriffsdefinitionen: [`../../../docs/README.md`](../../../docs/README.md)
+- User-Wiki-Referenz für alle Komponenten: [`../../../docs/ui-components/README.md`](../../../docs/ui-components/README.md)
 
 ## Offene Punkte
 

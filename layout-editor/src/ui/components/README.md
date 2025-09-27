@@ -1,6 +1,6 @@
 # UI-Komponenten
 
-Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Canvas-Ansicht. Sie folgen dem `UIComponent`-Pattern, um DOM-Lebenszyklen und Eventlistener deterministisch zu verwalten. Eine nutzerorientierte Soll-Dokumentation der sichtbaren Komponenten findest du im User-Wiki unter [`docs/ui-components.md`](../../../docs/ui-components.md).
+Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Canvas-Ansicht. Sie folgen dem `UIComponent`-Pattern, um DOM-Lebenszyklen und Eventlistener deterministisch zu verwalten. Die nutzerorientierte Soll-Dokumentation ist im User-Wiki kapitelweise unter [`../../../docs/ui-components/README.md`](../../../docs/ui-components/README.md) und den zugehörigen Unterseiten verankert.
 
 ## Inhalte
 - [`component.ts`](component.ts) – Basisklasse `UIComponent` inkl. `UIComponentScope`, Listener-Verwaltung und `renderComponent`-Helper.
