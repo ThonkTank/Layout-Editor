@@ -12,6 +12,7 @@ Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Can
 - [`structure-tree.ts`](structure-tree.ts) – Visualisiert die Layout-Hierarchie und hält Selektion & Fokus synchron.
 
 ## Konventionen
+- **To-Do**: [Dokumentationsabgleich](../../../todo/ui-components-doc-audit.md)
 - **Benennung**: Komponenten-Dateien enden auf `.ts` und exportieren genau eine Klasse `SomethingComponent`. Hilfsfunktionen werden in `primitives.ts` gesammelt.
 - **Lifecycle-Hooks**: `onMount` richtet DOM-Elemente und Renderer ein, `onDestroy` räumt alle Diff-Renderer und Observer über `scope.dispose()`/`registerCleanup` auf.
 - **DiffRenderer**: Beim Einsatz von `DiffRenderer` muss `getKey` stabil bleiben; `destroy` sollte `scope.dispose()` für Kind-Komponenten aufrufen.
