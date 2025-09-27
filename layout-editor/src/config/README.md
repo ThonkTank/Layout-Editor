@@ -2,6 +2,8 @@
 
 Configuration sources define how the editor loads domain-specific element metadata, attribute groups, and seed layouts. The logic here resolves the active configuration, validates incoming payloads, and exposes defaults for callers that need deterministic fallback data.
 
+> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../../todo/persistence-config-i18n-doc-audit.md)
+
 ## Files
 
 - `domain-source.ts` – Loads the configured domain bundle (builtin or vault JSON), validates payloads, exposes helper types for seed layouts, and emits descriptive errors when configuration is invalid.

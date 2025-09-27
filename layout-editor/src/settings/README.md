@@ -2,6 +2,8 @@
 
 Settings modules integrate the layout editor with Obsidian's preferences UI and expose runtime toggles that affect configuration sources and editor behaviour.
 
+> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../../todo/persistence-config-i18n-doc-audit.md)
+
 ## Files
 
 - `domain-settings.ts` – Manages the active domain configuration source, persists the selection in `localStorage`, notifies listeners about changes, and renders the toggle control used in the settings tab.

@@ -2,6 +2,8 @@
 
 Die Layout-Bibliothek kapselt das Speichern und Laden von Layout-Dateien im Obsidian-Vault. Dieses Dokument beschreibt die Ordnerstruktur, ID- und Schema-Regeln sowie die Fehlerbehandlung des Moduls `src/layout-library.ts`.
 
+> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../todo/persistence-config-i18n-doc-audit.md)
+
 ## Vault-Pfade und Legacy-Verzeichnisse
 
 - **Aktueller Speicherort:** Layouts werden standardmäßig unter `LayoutEditor/Layouts` abgelegt. Das Modul legt fehlende Ordner automatisch an, indem es die Segmente nacheinander erzeugt.【F:layout-editor/src/layout-library.ts†L28-L131】

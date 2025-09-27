@@ -2,6 +2,8 @@
 
 The localisation layer bundles all human-facing strings for the layout editor and provides helpers to clone and extend the default German translations.
 
+> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../../todo/persistence-config-i18n-doc-audit.md)
+
 ## Files
 
 - `strings.ts` – Declares the locale schema, exposes `createLayoutEditorStrings` for deep-merging overrides, and implements formatting helpers such as `formatLayoutString`.
