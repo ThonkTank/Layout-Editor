@@ -5,7 +5,7 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 ## Strukturdiagramm
 
 - `README.md` – Index des Backlogs, beschreibt Struktur, Konventionen und Metadaten-Standard.
-- `documentation-audit-state-model.md` – Audit der Dokumentation für State-, Datenmodell- und History-Flows.
+- `documentation-audit-state-model.md` – Audit der Dokumentation für State-, Datenmodell- und History-Flows (Status: geschlossen).
 - `documentation-audit-ui-experience.md` – Review der UI-, Presenter- und Interaktionsdokumentation.
 - `documentation-audit-configuration-settings.md` – Überprüfung der Konfigurations- und Settings-Dokumentation.
 - `documentation-audit-integration-api.md` – Validierung der Integrations- und Plugin-API-Dokumente.
@@ -16,7 +16,6 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 
 | Datei | Kategorie | Priorität | Kurzbeschreibung |
 | --- | --- | --- | --- |
-| [`documentation-audit-state-model.md`](documentation-audit-state-model.md) | Dokumentation | Hoch | Audit für State-, Datenmodell- und History-Dokumentation durchführen. |
 | [`ui-components-wiki.md`](ui-components-wiki.md) | Dokumentation | Hoch | Vollständiges Wiki mit Einträgen für jede UI-Komponente planen. |
 | [`documentation-audit-ui-experience.md`](documentation-audit-ui-experience.md) | Dokumentation | Mittel | UI-, Presenter- und Workflow-Dokumentation auf Lücken prüfen. |
 | [`documentation-audit-configuration-settings.md`](documentation-audit-configuration-settings.md) | Dokumentation | Mittel | Konfigurations-, Settings- und Fehlerpfad-Dokumentation abgleichen. |
@@ -33,3 +32,7 @@ Sobald neuer Handlungsbedarf entsteht, lege eine eigene Markdown-Datei in diesem
 - **Struktur**: Jede Datei enthält die Abschnitte _Originalkritik_, _Kontext_, _Betroffene Module_ und _Lösungsideen_.
 - **Verlinkungen**: Relevante Modul-Readmes verlinken auf die entsprechenden To-Dos, damit der Handlungsbedarf vor Ort sichtbar ist. Wird eine Abweichung im Soll-/Ist-Zustand entdeckt, kommt sie hier als To-Do und **nicht** ins User-Wiki.
 - **Pflegehinweis**: Aktualisiere Priorität und Besitzer, sobald Entscheidungen gefallen sind, und entferne erledigte To-Dos umgehend oder verschiebe sie ins Archiv.
+
+## Archiv / Abgeschlossene Aufgaben
+
+- [`documentation-audit-state-model.md`](documentation-audit-state-model.md) – Audit abgeschlossen, Ergebnis siehe Abschnitt „Ergebnis (2025-09-27)“ innerhalb der Datei.
