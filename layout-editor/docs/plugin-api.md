@@ -87,14 +87,19 @@ View-Bindings koppeln externe Render-Views an den Layout-Editor. Weitere Hinterg
 | `unregisterViewBinding(id: string): void` | Entfernt ein Binding. | 1.0.0 | Ignoriert unbekannte IDs. |
 | `resetViewBindings(definitions?: LayoutViewBindingDefinition[]): void` | Ersetzt den gesamten Registry-Inhalt. Ohne Argument wird auf eine leere Registry zurückgesetzt. | 1.0.0 | Bei doppelten IDs in `definitions` wird ein Fehler geworfen; bestehende Bindings bleiben unverändert. |
 | `getViewBindings(): LayoutViewBindingDefinition[]` | Liefert Snapshot aller Bindings. | 1.0.0 | Snapshot ist kopiert; direkte Mutationen haben keine Wirkung. |
+| `getViewBinding(id: string): LayoutViewBindingDefinition \| undefined` | Greift auf ein einzelnes Binding zu. | 1.0.0 | Gibt `undefined` zurück, wenn die ID unbekannt oder leer (nach Trimmen) ist. |
+| `hasViewBinding(id: string): boolean` | Prüft, ob eine ID registriert ist. | 1.0.0 | Leere/Whitespace-IDs ergeben `false` – ideal für Guards vor einer Registrierung. |
+| `getViewBindingIds(): string[]` | Gibt nur die IDs zurück. | 1.0.0 | Reihenfolge entspricht der Registrier-Reihenfolge. Für Logging oder Debug-Ausgaben geeignet. |
+| `getViewBindingsByTag(tag: string): LayoutViewBindingDefinition[]` | Filtert Bindings nach Tags. | 1.0.0 | Tag-Vergleich ist case-insensitive und trimmt Eingaben; unbekannte/leer getrimmte Tags liefern `[]`. |
 | `onViewBindingsChanged(listener): () => void` | Listener für Registry-Änderungen. | 1.0.0 | Rückgabe beendet die Beobachtung. Listener wird synchron ausgelöst. |
 
 ### Workflow: View-Bindings verwalten
 
 1. `api.registerViewBinding({ id: "cards", label: "Kartenansicht" });`
 2. Änderungen verfolgen: `const stop = api.onViewBindingsChanged(bindings => updateUi(bindings));`
-3. Beim Deaktivieren oder Entladen: `stop(); api.unregisterViewBinding("cards");`
-4. Für Bulk-Updates `api.resetViewBindings(newBindings);` verwenden. Doppelte IDs vorher deduplizieren, sonst wird eine `Error` geworfen.
+3. Diagnose & Telemetrie: `console.log(api.getViewBindingIds());` oder `api.getViewBindingsByTag("utility")` für Tag-basierte Filter.
+4. Beim Deaktivieren oder Entladen: `stop(); api.unregisterViewBinding("cards");`
+5. Für Bulk-Updates `api.resetViewBindings(newBindings);` verwenden. Doppelte IDs vorher deduplizieren, sonst wird eine `Error` geworfen.
 
 ## Fehlerhandling & Best Practices
 

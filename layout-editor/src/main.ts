@@ -11,7 +11,11 @@ import {
 } from "./definitions";
 import { listSavedLayouts, loadSavedLayout, saveLayoutToLibrary, type VersionedSavedLayout } from "./layout-library";
 import {
+    getViewBinding,
+    getViewBindingIds,
     getViewBindings,
+    getViewBindingsByTag,
+    hasViewBinding,
     onViewBindingsChanged,
     registerViewBinding as registerView,
     resetViewBindings as resetViewRegistry,
@@ -107,6 +111,10 @@ export interface LayoutEditorPluginApi {
     unregisterViewBinding(id: string): void;
     resetViewBindings(definitions?: LayoutViewBindingDefinition[]): void;
     getViewBindings(): LayoutViewBindingDefinition[];
+    getViewBinding(id: string): LayoutViewBindingDefinition | undefined;
+    hasViewBinding(id: string): boolean;
+    getViewBindingIds(): string[];
+    getViewBindingsByTag(tag: string): LayoutViewBindingDefinition[];
     onViewBindingsChanged(listener: (bindings: LayoutViewBindingDefinition[]) => void): () => void;
 }
 
@@ -163,6 +171,10 @@ export default class LayoutEditorPlugin extends Plugin {
                 resetViewRegistry(definitions ?? []);
             },
             getViewBindings,
+            getViewBinding,
+            hasViewBinding,
+            getViewBindingIds,
+            getViewBindingsByTag,
             onViewBindingsChanged: listener => onViewBindingsChanged(listener),
         };
     }
