@@ -12,8 +12,10 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - [`layout-library.md`](../layout-editor/docs/layout-library.md) – Nutzung der Layout-Bibliothek, Persistenzregeln und Wiederherstellungsabläufe.
 - [`data-model-overview.md`](../layout-editor/docs/data-model-overview.md) – Überblick über Layout-Entities, Beziehungen und Schemafelder.
 - [`persistence-errors.md`](../layout-editor/docs/persistence-errors.md) – Fehlermeldungen und Troubleshooting bei Speichern & Laden.
+- [`persistence-diagnostics.md`](../layout-editor/docs/persistence-diagnostics.md) – Monitoring-Checks und Leitplanken für Speicherintegrität im Clusterbetrieb.
 - [`ui-performance.md`](../layout-editor/docs/ui-performance.md) – Optimierung von Rendering, Diffs und Interaktionen für große Layouts.
 - [`i18n.md`](../layout-editor/docs/i18n.md) – Lokalisierung und Übersetzungs-Workflow im Layout-Editor.
+- [`stage-instrumentation.md`](../layout-editor/docs/stage-instrumentation.md) – Messpunkte, KPIs und Alarmierungs-Setup für Deploy- und Preview-Stages.
 - [`view-registry.md`](../layout-editor/docs/view-registry.md) – Lebenszyklus und Schutzmechanismen der View-Registry.
 - [`domain-configuration.md`](../layout-editor/docs/domain-configuration.md) – Konfiguration von Datenquellen und Sicherheitsmechanismen.
 - [`tooling.md`](../layout-editor/docs/tooling.md) – CLI-Helfer, Tests und Automatisierungen für Entwickler:innen.
