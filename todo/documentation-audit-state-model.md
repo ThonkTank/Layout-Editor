@@ -1,5 +1,5 @@
 ---
-status: open
+status: closed
 priority: high
 area:
   - documentation
@@ -34,3 +34,9 @@ links:
 - Begrifflichkeiten (z. B. *LayoutSnapshot*, *Patch*, *HistoryFrame*) vereinheitlichen und mit Glossar-Abschnitt verlinken.
 - Dokumentationslücken mit konkreten Aufgaben nachziehen (z. B. fehlende Sequenzdiagramme, unbeschriebene Edge-Cases) und anschließend Tests referenzieren.
 - Ergebnis im User-Wiki zusammenfassen und dort auf die detaillierten Modul-Dokumente verweisen.
+
+## Ergebnis (2025-09-27)
+
+- `layout-editor/src/state/README.md`, `layout-editor/src/model/README.md`, `layout-editor/docs/data-model-overview.md` und `layout-editor/docs/history-design.md` enthalten jetzt Glossar-, Sequenz- und Edge-Case-Abschnitte inkl. Testreferenzen.
+- Das User-Wiki beschreibt den Soll-Zustand in [`docs/layout-editor-state-history.md`](../docs/layout-editor-state-history.md) und verlinkt zurück in die technischen Guides.
+- Verweise auf dieses To-Do wurden aus den Modul-Dokumenten entfernt; offene Aufgaben verbleiben ausschließlich in den verbleibenden Audit-Dateien.

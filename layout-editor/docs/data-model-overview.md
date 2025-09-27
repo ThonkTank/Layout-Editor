@@ -20,6 +20,15 @@ Der Editor verwaltet Layout-Elemente nicht mehr in einer flachen Liste. Ein dedi
 
 Intern bleiben Nodes mutierbar, doch jede öffentliche Abgabe (z. B. für den Store) erfolgt via `cloneLayoutElement`, um unbeabsichtigte Fremdmutationen zu vermeiden.
 
+## Terminologie
+
+- **Layout-Node** – interne, mutierbare Repräsentation eines Layout-Elements im `LayoutTree`.
+- **Snapshot-Element** – Ergebnis von `cloneLayoutElement`; Grundlage für `LayoutEditorState`, `LayoutEditorSnapshot`, `LayoutBlueprint` und `SavedLayout`.
+- **LayoutEditorState** – UI-orientierter State (siehe `src/state/layout-editor-store.ts`) mit zusätzlichen Metadaten (`canUndo`, `isSavingLayout`, …).
+- **LayoutEditorSnapshot** – History- und Export-Basiszustand bestehend aus Canvas-Daten und geklonten Elementen.
+- **LayoutBlueprint** – Serialisierte Form für Exporte ohne Persistenzmetadaten.
+- **Patch** – Differenzstruktur (`redo`/`undo`) innerhalb von `LayoutHistory`, bestehend aus Canvas-, Element- und Ordnungsanteilen.
+
 ## Store Integration
 
 `LayoutEditorStore` delegiert alle strukturellen Mutationen an den `LayoutTree`:
@@ -55,6 +64,13 @@ Der Tree hält interne Mutationsobjekte ohne `children`-Arrays; diese werden ers
 - **`SavedLayout`** ergänzt `LayoutBlueprint` um `id`, `name`, `createdAt`, `updatedAt`.
 - `serializeState()` erstellt JSON mit gerundeten Canvas-/Element-Werten und trägt die zuletzt gespeicherten Metadaten (`lastSavedLayout*`) in zusätzliche Felder ein (`id`, `name`, `createdAt`, `updatedAt`).
 
+## Sequenzübersichten
+
+1. **Subscription & Export** – `subscribe()` liefert direkt `LayoutEditorState` und den aktuell gecachten Export-Payload, anschließend folgen Events erst nach `runInteraction()` oder manuellen Mutationen (`layout-editor-store.test.ts`).
+2. **Mutation → History** – Store-Operationen schreiben in den `LayoutTree`, erzeugen via `getElementsSnapshot()` neue Snapshots und registrieren Patches über `commitHistory()` (`layout-editor-store.test.ts`, `layout-tree.test.ts`).
+3. **Undo/Redo** – `LayoutHistory.undo/redo` spielen `undo`-/`redo`-Patches auf Basis des aktuellen Snapshots ein. Die Tests in `history-limits.test.ts` verifizieren Bounded-History, Baseline-Replay und Idempotenz.
+4. **Import/Reset** – `applySavedLayout()` lädt persistierte Elemente in den Tree, setzt Canvas-Größen und aktualisiert Export/History-Baseline. Daraus entstehen sofort neue `state`-/`export`-Events für Integratoren.
+
 ## Contract Summary
 
 1. `LayoutTree` ist die einzige Quelle für Eltern-/Kind-Beziehungen und Elementreihenfolgen.
@@ -63,13 +79,22 @@ Der Tree hält interne Mutationsobjekte ohne `children`-Arrays; diese werden ers
 4. History- und Export-Flows verlassen sich auf `cloneLayoutElement`; Änderungen daran müssen Tests (`layout-editor-store.instrumentation.test.ts`, `history-limits.test.ts`) berücksichtigen.
 5. Persistenz-JSON bleibt stabil, weil alle Felder JSON-kompatibel sind und ViewStates tief geklont werden.
 
+## Edge Cases
+
+- **Snapshot-Immutabilität** – Alle Snapshots werden via `cloneLayoutElement` erzeugt; Tests (`layout-editor-store.test.ts`, `history-limits.test.ts`) stellen sicher, dass externe Mutationen wirkungslos bleiben.
+- **ID-Kohärenz** – `LayoutTree.load()` entfernt duplizierte IDs und invalidierte Eltern, damit `collectDescendantIds` deterministisch bleibt (`layout-tree.test.ts`).
+- **Canvas-Clamping** – `setCanvasSize()` begrenzt Werte auf 200–2000 px und protokolliert Anpassungen über `canvas:size`/`clamp:step` (siehe `layout-editor-store.instrumentation.test.ts`).
+- **History-Limit** – `MAX_HISTORY_ENTRIES = 50`; Überläufe werden in die Baseline eingepflegt und Tests sichern Undo/Redo-Integrität (`history-limits.test.ts`).
+- **Rundung beim Export** – `serializeState()` rundet Geometrien auf ganze Zahlen, damit persistierte Layouts deterministisch bleiben.
+
 ## Navigation
 
 - [Documentation index](./README.md)
 - [Layout History Design](./history-design.md)
 - [State Layer](../src/state/README.md)
 - [Model Layer](../src/model/README.md)
+- [State- & History-Sollzustand](../../docs/layout-editor-state-history.md)
 
 ## Offene Aufgaben
 
-- Lückenanalyse und Glossar-Abgleich: [`documentation-audit-state-model.md`](../todo/documentation-audit-state-model.md).
+- Keine – Änderungen an Modell oder State müssen mit Tests und den referenzierten Dokumenten abgestimmt werden.

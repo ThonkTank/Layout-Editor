@@ -8,6 +8,7 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - [`persistence-diagnostics.md`](persistence-diagnostics.md) – Monitoring-Checks und Leitplanken für Speicherintegrität im Clusterbetrieb.
 - [`stage-instrumentation.md`](stage-instrumentation.md) – Messpunkte, KPIs und Alarmierungs-Setup für Deploy- und Preview-Stages.
 - [`ui-components.md`](ui-components.md) – Soll-Referenz aller sichtbaren UI-Komponenten (Stage, Strukturbaum, Inspector, Banner, Menüs) inklusive Interaktionsmuster und bekannten Lücken.
+- [`layout-editor-state-history.md`](layout-editor-state-history.md) – Soll-Zustand für Snapshots, History/Export-Flows und Telemetrie-Verpflichtungen.
 
 ## Setup-Workflows
 
@@ -51,6 +52,7 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - Technische Detailentscheidungen findest du weiterhin direkt in den Deep-Dive-Dateien unter `layout-editor/docs/`.
 - Ergänzungen oder neue Artikel sollten hier verlinkt werden, damit Anwender:innen einen konsistenten Einstiegspunkt besitzen.
 - Offene technische Maßnahmen sind im [`../todo/`](../todo/) Verzeichnis dokumentiert und bei den jeweiligen Modulen verlinkt.
+- Für State-, Snapshot- und History-Abläufe dient [`layout-editor-state-history.md`](layout-editor-state-history.md) als verbindliche Soll-Referenz; technische Hintergründe liefern die verlinkten Modul-Guides.
 
 ## Offene Aufgaben
 
