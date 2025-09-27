@@ -25,6 +25,9 @@ Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Can
 - `context.scope.register(cleanup)` verknüpft beliebige Aufräumlogik (z. B. Observer, Timer, Kind-Komponenten). Der Cleanup wird beim Entfernen des Knotens oder beim `DiffRenderer.clear()`-Aufruf ausgeführt.
 - Kombiniere Scope-Hilfen mit komponentenweiten `registerCleanup`-Einträgen: globale Listener bleiben am Komponenten-Scope, Knoten-spezifische Ressourcen hängen am Diff-Kontext und werden durch den Renderer freigegeben.
 
+## Offene Aufgaben
+- [To-Do: UI-Komponenten-Wiki vervollständigen](../../../../todo/ui-components-wiki.md)
+
 ## Weiterführende Dokumentation
 - Canvas- und Rendering-Details: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
 - Architektur des `src`-Moduls: [`../../README.md`](../../README.md)
