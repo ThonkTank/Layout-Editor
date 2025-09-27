@@ -17,7 +17,7 @@ The component layer now renders through a lightweight diffing helper that keeps 
 - Drag interactions run inside `LayoutEditorStore.runInteraction()`. The store batches `move`/`resize` plus layout reflows into a single state emission per frame, so the DOM stays in sync without flooding listeners.
 - Drag interactions now call `LayoutEditorStore.flushExport()` once the pointer is released. During the drag, frame updates emit only `state` events, batching export payloads until the interaction settles so JSON serialization does not run on every frame.
 - `focusElement()` recentres the camera on the requested element, emits a `StageCameraObserver` event with reason `focus`, and immediately applies the translated transform so other presenters (e.g. the structure panel) can keep camera state and telemetry in lock-step.
-- Camera motions emit `StageCameraObserver` telemetry hooks. Register them through `StageController` and clean them up as described in [Stage instrumentation › Kamera-Telemetrie](../../docs/stage-instrumentation.md#kamera-telemetrie).
+- Camera motions emit `StageCameraObserver` telemetry hooks. Register them through `StageController` and clean them up as described in [Stage instrumentation › Camera telemetry](./stage-instrumentation.md#camera-telemetry).
 
 ## Structure tree component
 

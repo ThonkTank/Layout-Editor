@@ -12,6 +12,7 @@ related background material.
 | [Layout Library](./layout-library.md) | Documents vault storage paths, schema migrations, and validation rules for saved layouts. | You interact with persisted layouts, migrate schemas, or diagnose storage errors. |
 | [Plugin API](./plugin-api.md) | Lists all public API methods, versioning helpers, and workflows for integrators. | You build or update external plugins that integrate with the Layout Editor. |
 | [Persistence Errors](./persistence-errors.md) | Summarises banner behaviour and messaging for storage failures. | You design user-facing feedback for save/load failures or map error codes. |
+| [Stage Instrumentation](./stage-instrumentation.md) | Documents telemetry events, reset conventions, and camera observer hooks for the stage. | You add new telemetry, diagnose instrumentation gaps, or integrate analytics consumers. |
 | [UI Performance](./ui-performance.md) | Captures the diff-driven rendering pipeline and lifecycle expectations of UI components. | You optimise rendering logic or add UI components that must cooperate with the diff renderer. |
 | [View Registry](./view-registry.md) | Explains registration, diagnostics, and error handling for external view bindings. | You integrate custom visualisations or need to inspect registered view bindings. |
 | [Localization Guidelines](./i18n.md) | Shows how locale bundles are structured, overridden, and injected into presenters. | You add new UI strings, support additional locales, or test localisation behaviour. |
