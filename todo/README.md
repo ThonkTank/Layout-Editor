@@ -6,6 +6,7 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 
 - `README.md` – Index des Backlogs, beschreibt Struktur, Konventionen und Metadaten-Standard.
 - `documentation-audit-state-model.md` – Audit der Dokumentation für State-, Datenmodell- und History-Flows (Status: geschlossen).
+- `ui-components-wiki.md` – Ausbau des UI-Komponenten-Wikis (Status: geschlossen).
 - `documentation-audit-ui-experience.md` – Review der UI-, Presenter- und Interaktionsdokumentation.
 - `documentation-audit-configuration-settings.md` – Überprüfung der Konfigurations- und Settings-Dokumentation.
 - `documentation-audit-integration-api.md` – Validierung der Integrations- und Plugin-API-Dokumente.
@@ -16,7 +17,6 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 
 | Datei | Kategorie | Priorität | Kurzbeschreibung |
 | --- | --- | --- | --- |
-| [`ui-components-wiki.md`](ui-components-wiki.md) | Dokumentation | Hoch | Vollständiges Wiki mit Einträgen für jede UI-Komponente planen. |
 | [`documentation-audit-ui-experience.md`](documentation-audit-ui-experience.md) | Dokumentation | Mittel | UI-, Presenter- und Workflow-Dokumentation auf Lücken prüfen. |
 | [`documentation-audit-configuration-settings.md`](documentation-audit-configuration-settings.md) | Dokumentation | Mittel | Konfigurations-, Settings- und Fehlerpfad-Dokumentation abgleichen. |
 | [`documentation-audit-integration-api.md`](documentation-audit-integration-api.md) | Dokumentation | Mittel | Integrations- und Plugin-API-Guides auf Vollständigkeit prüfen. |
@@ -36,3 +36,4 @@ Sobald neuer Handlungsbedarf entsteht, lege eine eigene Markdown-Datei in diesem
 ## Archiv / Abgeschlossene Aufgaben
 
 - [`documentation-audit-state-model.md`](documentation-audit-state-model.md) – Audit abgeschlossen, Ergebnis siehe Abschnitt „Ergebnis (2025-09-27)“ innerhalb der Datei.
+- [`ui-components-wiki.md`](ui-components-wiki.md) – Informationsarchitektur abgeschlossen, Ergebnis siehe Abschnitt „Ergebnis (2025-02-14)“.
