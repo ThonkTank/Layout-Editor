@@ -4,6 +4,8 @@ Der Header des Layout-Editors blendet bei fehlgeschlagenen Speicheroperationen e
 stellt strukturierte Informationen dar, damit Anwender den Fehler ohne Konsole nachvollziehen können. Technische Hintergründe
 zu Vault-Pfaden, Schema-Regeln und Fehlerquellen liefert [`layout-library.md`](./layout-library.md).
 
+> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../todo/persistence-config-i18n-doc-audit.md)
+
 ## Verhalten
 
 - **Auslöser:** Fehler des `layout-library`-Moduls, z. B. ungültige IDs oder Elementdaten beim Speichern.

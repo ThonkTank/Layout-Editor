@@ -4,6 +4,8 @@ Die Layout-Definitionen des Plugins lassen sich jetzt entweder aus den eingebaut
 oder aus einer JSON-Datei im Vault laden. Diese Seite beschreibt Aufbau, Ablageort und
 Validierungsregeln der Konfiguration sowie die notwendigen Schritte zur Aktivierung.
 
+> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../todo/persistence-config-i18n-doc-audit.md)
+
 ## Quellen auswählen
 
 1. Öffne die **Einstellungen** von Obsidian und navigiere zu **Community Plugins → Layout Editor**.
