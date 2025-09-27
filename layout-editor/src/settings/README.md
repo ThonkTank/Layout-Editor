@@ -2,8 +2,6 @@
 
 Settings modules integrate the layout editor with Obsidian's preferences UI and expose runtime toggles that affect configuration sources and editor behaviour.
 
-> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../../todo/persistence-config-i18n-doc-audit.md)
-
 ## Files
 
 - `domain-settings.ts` – Manages the active domain configuration source, persists the selection in `localStorage`, notifies listeners about changes, and renders the toggle control used in the settings tab.
@@ -13,5 +11,6 @@ Settings modules integrate the layout editor with Obsidian's preferences UI and 
 
 - Keep settings rendering declarative: return disposer callbacks from helpers (e.g. `renderDomainConfigurationSetting`) so the tab can clean up listeners on hide.
 - Persist new settings via Obsidian's storage APIs or `localStorage` consistently; reuse the `plugin.register` teardown hook when adding observers.
+- Wenn Einstellungen Laufzeitdaten beeinflussen (z. B. Domänenquelle → Seed-Sync), registriere Change-Listener wie `onDomainConfigurationSourceChange` und delegiere an die zuständigen Services.
 - Document user-facing workflows for new settings in the [domain configuration documentation](../../docs/domain-configuration.md) or other relevant guides under `docs/`.
 - When adding new toggles, define the underlying state or configuration first (see [`../config`](../config/README.md)) and inject the render helper into `settings-tab.ts`.
