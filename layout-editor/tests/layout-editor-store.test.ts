@@ -51,10 +51,27 @@ async function runTests() {
     assert.ok(!stateAfterDelete.elements.some(el => el.id === child!.id), "child should be removed");
 
     const externalSnapshot = store.getState();
+    const baselineSnapshotJSON = JSON.stringify(externalSnapshot);
     const originalElementCount = externalSnapshot.elements.length;
     const firstElement = externalSnapshot.elements[0];
     assert.ok(firstElement, "container element should still exist after deletion");
+
+    // Regression für "store-snapshot-immutability-tests" (To-Do geschlossen):
+    // Wir mutieren den Snapshot absichtlich in der Breite, den verschachtelten
+    // Feldern und der Elementliste. Der Store darf davon nichts mitbekommen.
+    externalSnapshot.canvasWidth = 1337;
+    externalSnapshot.selectedElementId = "ghost";
     firstElement.label = "External mutation";
+    firstElement.attributes.push("forged-attribute");
+    firstElement.children = ["phantom-child"];
+    firstElement.layout = { gap: 99, padding: 7, align: "end" };
+    firstElement.options = ["ghost-option"];
+    firstElement.viewState = { hacked: true };
+    externalSnapshot.elements.push({
+        ...firstElement,
+        id: "forged",
+        label: "Forged",
+    });
     externalSnapshot.elements.pop();
 
     const stateAfterExternalMutation = store.getState();
@@ -67,6 +84,11 @@ async function runTests() {
         stateAfterExternalMutation.elements[0]?.label,
         "External mutation",
         "mutating snapshot properties must not leak into the store",
+    );
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(stateAfterExternalMutation)),
+        JSON.parse(baselineSnapshotJSON),
+        "store state must remain identical after external snapshot mutations",
     );
 
     store.undo();

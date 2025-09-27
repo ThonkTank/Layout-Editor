@@ -64,7 +64,14 @@ async function testHistoryCapAndRedoIntegrity() {
     assert.equal(current.elements[0]?.label, "Label 5", "undo should stop at bounded baseline");
     assert.equal(history.canUndo, false, "history should not allow undo past retained window");
 
+    // Regression für das geschlossene To-Do "store-snapshot-immutability-tests":
+    // Mutationen an History-Snapshots dürfen beim Redo nicht auftauchen.
+    current.canvasHeight = 4242;
     current.elements[0]!.label = "Mutated outside history";
+    current.elements[0]!.attributes.push("rogue");
+    current.elements[0]!.children = ["ghost-child"];
+    current.elements[0]!.layout = { gap: 123, padding: 5, align: "stretch" };
+    current.elements[0]!.viewState = { injected: true };
     current.elements.push({
         ...ELEMENT_TEMPLATE,
         id: "temp",
