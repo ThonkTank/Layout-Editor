@@ -32,7 +32,26 @@
 - **Tests & Reviews:** Drag-/Render-Verhalten gesichert in [`layout-editor/tests/ui-component.test.ts`](../../layout-editor/tests/ui-component.test.ts) und [`layout-editor/tests/ui-diff-renderer.test.ts`](../../layout-editor/tests/ui-diff-renderer.test.ts).
 - **Workflows:** Nutzerperspektive siehe [`docs/ui-components/stage.md`](stage.md) (Fokus-Kopplung) und [`docs/stage-instrumentation.md`](../stage-instrumentation.md#tests--qualit%C3%A4tssicherung) für QA-Checks.
 
+## Ist-Analyse Fokus & ARIA
+
+- **Fokusierbarkeit:** Einträge sind `<button>` und somit tabbar. Es existiert kein Umgang mit Pfeiltasten; Fokus verlässt den Tree nach `Tab` ohne Schleife.
+- **Semantik:** Buttons tragen nur sichtbaren Text (`Label`, Typ, Elternname). Keine `aria-level`, `aria-expanded` oder `aria-setsize` Informationen für Screenreader.
+- **Drag & Drop:** HTML-Drag-Events (`draggable=true`) sind für Screenreader nicht zugänglich; es existiert kein Tastatur-Pendant.
+- **Drop-Zonen:** Root-Dropzone ist ein `<div>` ohne Rolle. Aktivzustände werden nur visuell (`is-active`) dargestellt.
+
+## Accessibility-Richtlinie
+
+| Ziel | Soll-Vorgabe |
+| --- | --- |
+| **Fokussteuerung** | Tree erhält `role="tree"`. Einträge verwenden `role="treeitem"`, `aria-level`, `aria-setsize`, `aria-posinset`. `Home/End` springen zum ersten/letzten Eintrag; `ArrowLeft/Right` klappen Container ein/aus. |
+| **Selektion** | `aria-selected` spiegelt `is-selected`. `Enter`/`Space` aktivieren `onSelect`. Nach Aktivierung wird der Stage-Fokus (s. Stage-Richtlinie) ausgelöst. |
+| **Drag-Ersatz** | Tastaturpfad: `Ctrl+Shift+ArrowUp/Down` verschiebt Elemente innerhalb des Containers, `Ctrl+Shift+[Left|Right]` ändert den Elternknoten. Aktionen sind undo-fähig und verwenden dieselben Store-Aufrufe wie Pointer-Drag. |
+| **Drop-Zonen** | Root-Dropzone erhält `role="treeitem"` plus `aria-label="An den Wurzelknoten anhängen"`. Aktivität wird via `aria-live="polite"` angekündigt („Ziel verfügbar“ / „Ziel nicht verfügbar“). |
+| **Screenreader-Text** | Button-Label folgt Format „{Typ-Label}: {Benutzerlabel} (Eltern: {Name}, Kinder: {Anzahl})“. Werte werden lokalisiert und auf 80 Zeichen gekürzt. |
+
+> 📋 **QA-Hinweis:** Bis die Tastaturpfade implementiert sind, muss die manuelle Checkliste (siehe [`layout-editor/tests/README.md`](../../layout-editor/tests/README.md#manuelle-accessibility-checkliste)) den Status „nicht erfüllt“ dokumentieren.
+
 ## Accessibility & Telemetrie
 
-- Tastaturnavigation und Screenreader-Rollen sind als offene Aufgabe in [`todo/ui-component-accessibility-spec.md`](../../todo/ui-component-accessibility-spec.md) dokumentiert.
-- Drag-Status liefert `onDragStateChange` an Presenter; Telemetrie-Erweiterungen folgen dem To-Do [`todo/ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md) für Sequenzdiagramme.
+- Drag-Status liefert `onDragStateChange` an Presenter; Telemetrie-Erweiterungen bleiben Bestandteil von [`todo/ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md) für Sequenzdiagramme.
+- Die Tree-Richtlinie ergänzt die Gesamtübersicht in [`docs/ui-components.md`](../ui-components.md#accessibility-richtlinie-stage-tree-shell) und ist Referenz für zukünftige Implementierungen.

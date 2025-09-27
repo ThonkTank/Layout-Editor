@@ -26,10 +26,11 @@ Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Can
 - Kombiniere Scope-Hilfen mit komponentenweiten `registerCleanup`-Einträgen: globale Listener bleiben am Komponenten-Scope, Knoten-spezifische Ressourcen hängen am Diff-Kontext und werden durch den Renderer freigegeben.
 
 ## Offene Aufgaben
-- Accessibility-Spezifikation für Stage, Strukturbaum und Resizer ergänzen: [`ui-component-accessibility-spec.md`](../../../../todo/ui-component-accessibility-spec.md)
 - Rollen- und Berechtigungskonzept des Inspectors definieren: [`ui-component-inspector-permissions.md`](../../../../todo/ui-component-inspector-permissions.md)
 - Eskalationsregeln für Status-Banner dokumentieren: [`ui-component-status-ux-gaps.md`](../../../../todo/ui-component-status-ux-gaps.md)
 - Kontextmenü-Inventar vervollständigen: [`ui-component-menu-inventory.md`](../../../../todo/ui-component-menu-inventory.md)
+
+> ✅ **Accessibility-Leitlinie:** Stage, Strukturbaum und Shell folgen der Spezifikation in [`../../../docs/ui-components.md`](../../../docs/ui-components.md#accessibility-richtlinie-stage-tree-shell). Abweichungen sind hier zu verlinken statt neue To-Dos anzulegen.
 
 ## Weiterführende Dokumentation
 - User-Wiki-Referenz der UI-Komponenten: [`../../../docs/ui-components.md`](../../../docs/ui-components.md)

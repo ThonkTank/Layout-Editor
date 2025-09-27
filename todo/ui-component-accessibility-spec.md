@@ -1,5 +1,5 @@
 ---
-status: open
+status: closed
 priority: high
 area:
   - documentation
@@ -33,8 +33,8 @@ links:
 - `layout-editor/src/ui/components/editor-shell.ts`
 - Potenzielle Tests in `layout-editor/src/tests/`
 
-## Lösungsideen
-- Accessibility-Guideline schreiben: Fokuspfad, Tastenkombinationen, Screenreader-Texte, Live-Regionen für Banner.
-- Ergänzende UI-Tests definieren (z. B. Playwright oder Jest mit jsdom) für Keyboard-Interaktionen.
-- Abstimmen mit `ui-accessibility-and-diagrams.md`, damit Diagramme & Texte konsistent bleiben.
-- Nach Fertigstellung User-Wiki aktualisieren und hierher verlinkte Hinweise entfernen.
+## Abschlussnotiz (2024-05)
+- Accessibility-Guideline dokumentiert in [`docs/ui-components.md`](../docs/ui-components.md#accessibility-richtlinie-stage-tree-shell) sowie den Komponenten-Seiten (`stage.md`, `structure-tree.md`, `editor-shell.md`).
+- Ist-Analysen der Implementierung sind in den Komponenten-Seiten hinterlegt, damit Reviewer Abweichungen erkennen.
+- `layout-editor/tests/README.md` enthält nun eine manuelle Tastatur- und Screenreader-Checkliste als Übergangslösung.
+- Technische Readmes verlinken auf die neue Guideline; veraltete To-Do-Verweise wurden entfernt.

@@ -34,8 +34,26 @@
 - **Tests:** Verhalten abgesichert in [`layout-editor/tests/ui-component.test.ts`](../../layout-editor/tests/ui-component.test.ts) und [`layout-editor/tests/ui-diff-renderer.test.ts`](../../layout-editor/tests/ui-diff-renderer.test.ts).
 - **Performance & Telemetrie:** Siehe [`layout-editor/docs/ui-performance.md`](../../layout-editor/docs/ui-performance.md#stage-component) und [`docs/stage-instrumentation.md`](../stage-instrumentation.md#kamera-telemetrie).
 
+## Ist-Analyse Fokus & ARIA
+
+- **Fokus:** Der Stage-Host (`div.sm-le-stage`) ist nicht fokussierbar. `focusElement` bewegt ausschließlich die Kamera; Keyboard-Fokus verbleibt auf dem auslösenden Control.
+- **Pointer-Layer:** Element-Container werden als `div.sm-le-box` gerendert und reagieren nur auf Pointer (`pointerdown`, `pointermove`). Es existieren keine `tabindex`- oder `role`-Attribute.
+- **Screenreader:** Element-Karten enthalten keine semantischen Beschreibungen. Die visuelle Auswahl (`is-selected`) wird nicht akustisch angekündigt, da keine Live-Region oder ARIA-Attribute gesetzt werden.
+- **Live-Feedback:** Kamera-Events (`StageCamera*Event`) stehen ausschließlich Telemetrie-Loggern zur Verfügung; es gibt keine Benutzer*innen-orientierten Ansagen.
+
+## Accessibility-Richtlinie
+
+| Ziel | Soll-Vorgabe |
+| --- | --- |
+| **Fokusaufnahme** | Stage-Host erhält `tabindex="0"` und eine Tastatur-Shortcut-Brücke: `Enter` oder `Space` aus dem Strukturbaum verschiebt den Fokus auf die Stage und ruft `focusElement` auf. Beim Mount setzt die Shell `aria-label="Layout-Bühne"` (lokalisierbar via i18n). |
+| **Navigation** | `Arrow`-Tasten verschieben das aktuell ausgewählte Element in 1 px-Schritten (`Shift+Arrow` = 10 px). `Ctrl+Arrow` (macOS: `Alt+Arrow`) triggert Resize entlang der Pfeilrichtung. Pointer- und Keyboard-Interaktionen teilen denselben Codepfad (`store.runInteraction`). |
+| **Screenreader-Feedback** | Eine `aria-live="polite"` Region innerhalb der Stage kündigt an: „Element {Label} ausgewählt. Position X={x}, Y={y}, Größe {w}×{h}.“ Beim Verlust der Auswahl erfolgt „Keine Auswahl aktiv.“ |
+| **Role & States** | Stage-Host verwendet `role="application"` für komplexe Interaktion. Einzelne `sm-le-box`-Container deklarieren `role="group"` plus `aria-roledescription="Layout-Element"` und spiegeln `is-selected` über `aria-selected="true"`. |
+| **Fehler & Grenzen** | Beim Clamp auf Canvas-Ränder sendet die Live-Region Meldungen wie „Linker Rand erreicht“. Dies verhindert stumme Bewegungsabbrüche. |
+
+> 🔎 **Implementierungsnotiz:** Keyboard-Routinen dürfen nur aktiv sein, wenn `selectedElementId` gesetzt ist; andernfalls ignorieren Stage-Listener Eingaben und die Live-Region meldet „Keine Auswahl aktiv.“
+
 ## Accessibility & Telemetrie
 
 - Kamera- und Drag-Abläufe publizieren Events für Observability (`observeCamera`, `StageCamera*Event`). Konsumenten loggen Fokus- und Zoom-Ursachen.
-- Tastatursteuerung der Elementfokussierung ist offen; siehe To-Do [`todo/ui-component-accessibility-spec.md`](../../todo/ui-component-accessibility-spec.md) für Barrierefreiheitsanforderungen.
-- Screenreader-Ankündigungen und Assistive-Technologien folgen denselben To-Dos; zusätzliche Spezifikationen werden dort gepflegt.
+- Die oben definierte Richtlinie ist verbindlich für neue Features; Abweichungen müssen in [`docs/ui-components.md`](../ui-components.md#accessibility-richtlinie-stage-tree-shell) dokumentiert und begründet werden.

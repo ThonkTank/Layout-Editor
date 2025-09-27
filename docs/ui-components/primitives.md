@@ -31,5 +31,5 @@
 
 ## Accessibility & Telemetrie
 
-- Primitives erben ARIA-Attribute der Elements-Bibliothek; zusätzliche Anforderungen (z. B. Fokus-Reihenfolge) sind im To-Do [`todo/ui-component-accessibility-spec.md`](../../todo/ui-component-accessibility-spec.md) zu definieren.
+- Primitives erben ARIA-Attribute der Elements-Bibliothek; zusätzliche Anforderungen (z. B. Fokus-Reihenfolge) folgen der globalen Richtlinie in [`docs/ui-components.md`](../ui-components.md#accessibility-richtlinie-stage-tree-shell).
 - Button- und Status-Interaktionen sollten Telemetrie-Events (z. B. Settings-Änderungen) konsistent loggen; Sequenzdiagramme folgen [`todo/ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md).
