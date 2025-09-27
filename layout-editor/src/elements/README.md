@@ -4,6 +4,17 @@ Dieses Verzeichnis bündelt alle Layout-Editor-Komponenten, die als **Elements**
 
 ## Struktur & Zuständigkeiten
 
+```
+elements/
+├── README.md             – Leitfaden (diese Datei)
+├── base.ts               – Basisklassen & Kontrakte
+├── component-manifest.ts – Generiertes Manifest (nicht manuell editieren)
+├── registry.ts           – Lookup für Elementdefinitionen
+├── ui.ts                 – UI-Primitiven für Palette & Inspector
+├── components/           – Konkrete Elementimplementierungen
+└── shared/               – Basishilfen für Komponenten & Renderer
+```
+
 | Pfad | Beschreibung |
 | --- | --- |
 | [`base.ts`](./base.ts) | Deklariert `LayoutElementComponent`, Preview-/Inspector-Kontexte sowie Factory-Signaturen, die von allen Element-Implementierungen genutzt werden. |
@@ -18,6 +29,26 @@ Dieses Verzeichnis bündelt alle Layout-Editor-Komponenten, die als **Elements**
 1. **Komponente ableiten:** Neue Elemente bauen auf den Basisklassen aus [`shared/component-bases.ts`](./shared/component-bases.ts) auf oder implementieren `LayoutElementComponent` direkt.
 2. **Registrieren:** Die Implementierung wird im Build-Prozess dem [`component-manifest.ts`](./component-manifest.ts) hinzugefügt und dadurch automatisch von [`registry.ts`](./registry.ts) erfasst.
 3. **UI anbinden:** Preview- und Inspector-Logik verwenden die Hilfsfunktionen aus [`ui.ts`](./ui.ts) sowie die globalen Presenter in [`../presenters`](../presenters), insbesondere [`stage-controller.ts`](../presenters/stage-controller.ts) für die Stage-Interaktion.
+
+## Kernabläufe
+
+### Palette → Stage (Drag & Drop)
+1. `createElementsField` liefert Palette-Einträge inklusive Drag-Metadaten.
+2. Beim Drop ruft der Presenter `store.addElementFromDefinition()`, wobei `registry.ts` Definition und Defaultwerte liefert.
+3. Die Stage empfängt den aktualisierten Snapshot und ruft `ensureContainerDefaults()` für neue Container.
+4. Der Nutzer-Workflow ist im User-Wiki unter [Stage-Bedienkonzept › Drag-Szenario](../../../docs/stage-instrumentation.md#tests--qualit%C3%A4tssicherung) beschrieben.
+
+### Inspector-Änderungen
+1. Inspector-Controls verwenden `createElementsSelect`/`createElementsField` aus [`ui.ts`](./ui.ts).
+2. Änderungen triggern Presenter-Callbacks (`StructurePanelPresenter` oder Header-Formulare), die `LayoutEditorStore.updateElement()` aufrufen.
+3. Der Store publiziert den Snapshot; Previews nutzen `syncElementNode` um nur betroffene Attribute zu patchen.
+4. Der Soll-Zustand für diese Bearbeitungsschritte ist im User-Wiki unter [Setup-Workflows › View-Bindings](../../../docs/README.md#setup-workflows) dokumentiert.
+
+### Manifest-Erweiterung
+1. Neue Komponenten werden in `components/` abgelegt.
+2. `npm run build` führt das Manifest-Script aus und registriert die Komponente in `component-manifest.ts`.
+3. `registry.ts` stellt die Definition bereit; Palette, Stage und Inspector erhalten sie beim nächsten Import.
+4. Offene Diagramme für diesen Ablauf sind im To-Do [`ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md) hinterlegt.
 
 ## Registry- & Manifest-Pipeline
 
@@ -35,7 +66,9 @@ Dieses Verzeichnis bündelt alle Layout-Editor-Komponenten, die als **Elements**
 - [Element Preview API](../element-preview.ts) – definiert, wie Previews im Editor gerendert werden.
 - [View Registry](../view-registry.ts) – stellt Feature-Bindings bereit, die z. B. vom `view-container` genutzt werden.
 - [UI-Komponenten](../ui/components) – Basisbausteine für Palette, Inspector und Modals.
+- Nutzerperspektive & Soll-Zustand: [`../../../docs/README.md`](../../../docs/README.md)
 
 ## Offene Punkte
 
 - Workflow- und Querverweis-Review: [`documentation-audit-ui-experience.md`](../../todo/documentation-audit-ui-experience.md).
+- Sequenzdiagramme & Barrierefreiheit: [`ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md).

@@ -10,6 +10,7 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 - `documentation-audit-configuration-settings.md` – Überprüfung der Konfigurations- und Settings-Dokumentation.
 - `documentation-audit-integration-api.md` – Validierung der Integrations- und Plugin-API-Dokumente.
 - `store-snapshot-immutability-tests.md` – Regressionstest für unveränderliche Store-Snapshots.
+- `ui-accessibility-and-diagrams.md` – Sequenzdiagramme und Barrierefreiheitsrichtlinien für UI-Flows.
 
 ## Backlog-Übersicht
 
@@ -21,6 +22,7 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 | [`documentation-audit-configuration-settings.md`](documentation-audit-configuration-settings.md) | Dokumentation | Mittel | Konfigurations-, Settings- und Fehlerpfad-Dokumentation abgleichen. |
 | [`documentation-audit-integration-api.md`](documentation-audit-integration-api.md) | Dokumentation | Mittel | Integrations- und Plugin-API-Guides auf Vollständigkeit prüfen. |
 | [`store-snapshot-immutability-tests.md`](store-snapshot-immutability-tests.md) | Tests | Mittel | Regressionstest sicherstellen, dass Store-Snapshots außerhalb des Stores nicht mutiert werden können. |
+| [`ui-accessibility-and-diagrams.md`](ui-accessibility-and-diagrams.md) | Dokumentation | Mittel | Sequenzdiagramme und Barrierefreiheit für UI-Flows definieren. |
 
 Sobald neuer Handlungsbedarf entsteht, lege eine eigene Markdown-Datei in diesem Ordner an und verlinke sie in dieser Tabelle nach Priorität.
 

@@ -10,6 +10,12 @@ The component layer now renders through a lightweight diffing helper that keeps 
 
 ## Stage component
 
+### Sequenz: Fokus-Handshake
+1. Tree/Presenter aktualisiert die Store-Auswahl (`LayoutEditorStore.selectElement`).
+2. `StageController` erhält den Snapshot, patched `StageComponent` und ruft `focusElement()` bei Bedarf.
+3. `StageComponent` emittiert Telemetrie (`StageCameraObserver`), die in [`../../docs/stage-instrumentation.md`](../../docs/stage-instrumentation.md#kamera-telemetrie) mit Nutzerperspektive dokumentiert ist.
+4. Der Nutzer-Workflow ist zusätzlich im User-Wiki unter [Stage-Fokus & Navigation](../../docs/stage-instrumentation.md#kamera-telemetrie) beschrieben.
+
 - `StageComponent` keeps a keyed renderer over canvas nodes. Layout mutations pass through `DiffRenderer`, ensuring that drag/resize operations only repaint the affected element tiles instead of rebuilding the entire stage.
 - Element cursors are cached per snapshot. Pointer handlers resolve parents/children via the cursor map so they never scan the full element list and they can honour the immutable snapshots the store publishes.
 - Selection state is derived inside the shared `syncElementNode` update hook, so toggling selection or dimensions does not trigger unnecessary reflows.
@@ -21,6 +27,12 @@ The component layer now renders through a lightweight diffing helper that keeps 
 - Camera motions emit `StageCameraObserver` telemetry hooks. Register them through `StageController` and clean them up as described in [Stage instrumentation › Kamera-Telemetrie](../../docs/stage-instrumentation.md#kamera-telemetrie). The `focus` reason is used whenever a tree-driven selection jumps the camera, making analytics correlation trivial.
 
 ## Structure tree component
+
+### Sequenz: Drag-Reparenting
+1. Tree startet Drag (`onDragStateChange(started)`); Presenter setzt `store.setDraggedElement`.
+2. Beim Drop ruft der Presenter `store.assignElementToContainer()`.
+3. Store publiziert Snapshot; Tree und Stage lesen `draggedElementId === null` und räumen Overlays auf.
+4. Die Anwenderführung siehe [User-Wiki › Stage-Bedienkonzept](../../docs/stage-instrumentation.md#tests--qualit%C3%A4tssicherung).
 
 - The structure tree uses nested diff renderers: the root list and every container node get their own keyed renderer, allowing selective expansion/collapse updates without recreating sibling entries.
 - Entry metadata (title/meta spans, child list, and drag state) stays cached across updates; the diff cycle refreshes text, selection, and child counts in place.
@@ -44,6 +56,12 @@ The component layer now renders through a lightweight diffing helper that keeps 
 
 ## Header controls feedback
 
+### Sequenz: Persistenz-Fehlerfall
+1. Header löst `saveLayoutToLibrary` aus.
+2. Fehler wird normalisiert (`describeLayoutPersistenceError`) und an Banner & Notice gespiegelt.
+3. Erfolgreiche Wiederholung ruft `clearPersistenceError()` und entfernt Banner/Notice synchron.
+4. Für Nutzer:innen ist der Erwartungswert im User-Wiki unter [Fehlerdiagnose & Qualitätschecks](../../docs/README.md#fehlerdiagnose--qualit%C3%A4tschecks) festgehalten.
+
 - `HeaderControlsPresenter` wires the status banner component so persistence failures surface inline. The presenter normalises thrown errors via `describeLayoutPersistenceError()`, maps them to a deterministic code/description/help trio, and mirrors the same message through an Obsidian `Notice` when the host runtime exposes it.
 - `showPersistenceError()` caches the view model, instantiates `StatusBannerComponent` on demand, and mirrors the `noticeMessage` through `showNotice()`, ensuring banner and Obsidian notice stay in sync.
 - `isSavingLayout` keeps the banner stable during retries; once saving succeeds, `clearPersistenceError()` resets the banner and cached error. Import failures opt out of banners and only surface as notices, avoiding stale error chrome.
@@ -59,3 +77,4 @@ Keeping these rules in mind ensures the rendering layer remains incremental, pre
 ## Offene Aufgaben
 
 - Interaktions- und Performance-Dokumentation konsolidieren: [`documentation-audit-ui-experience.md`](../todo/documentation-audit-ui-experience.md).
+- Diagramme & Accessibility-Guidelines ergänzen: [`ui-accessibility-and-diagrams.md`](../todo/ui-accessibility-and-diagrams.md).

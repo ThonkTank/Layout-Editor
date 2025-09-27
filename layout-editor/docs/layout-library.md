@@ -33,10 +33,22 @@ Beim Speichern aggregiert das Modul alle Validierungen, bevor die Datei geschrie
 
 Bei Erfolg werden Metadaten wie `createdAt`, `updatedAt` und `schemaVersion` gesetzt, sodass Folgeaufrufe konsistente Daten lesen können.【F:layout-editor/src/layout-library.ts†L204-L217】
 
+### Sequenz: Layout speichern
+1. Header-Presenter ruft `saveLayoutToLibrary` mit dem aktuellen Snapshot auf.【F:layout-editor/src/presenters/header-controls.ts†L312-L361】
+2. `resolveLayoutId` und Dimensionsprüfungen validieren Eingaben; Fehler werden früh geworfen.【F:layout-editor/src/layout-library.ts†L176-L233】
+3. Persistente Felder werden gesetzt und `app.vault.create/modify` geschrieben.【F:layout-editor/src/layout-library.ts†L204-L223】
+4. Erfolg/Fehler spiegelt der Header als Banner & Notice; Nutzerführung siehe [User-Wiki › Fehlerdiagnose](../../docs/README.md#fehlerdiagnose--qualit%C3%A4tschecks).
+
 ## Laden und Lesen
 
 - **Metadaten lesen:** `readLayoutMeta` analysiert jede JSON-Datei, verwirft invalide Dimensionen und Elemente und führt anschließend die Schema-Migrationen aus. Fehler beim Lesen werden protokolliert, das Layout wird dann übersprungen.【F:layout-editor/src/layout-library.ts†L340-L374】
 - **Listen & Einzelabruf:** `listSavedLayouts` und `loadSavedLayout` stellen sicher, dass der Zielordner existiert, bevor Dateien eingelesen werden.【F:layout-editor/src/layout-library.ts†L377-L395】
+
+### Sequenz: Layout laden
+1. UI fordert `listSavedLayouts` oder `loadSavedLayout` beim Presenter an.【F:layout-editor/src/presenters/header-controls.ts†L364-L409】
+2. Die Bibliothek validiert/vervollständigt Pfade, liest JSON-Dateien und führt Migrationen aus.【F:layout-editor/src/layout-library.ts†L28-L158】【F:layout-editor/src/layout-library.ts†L340-L374】
+3. Ungültige Layouts werden verworfen, Notice „Layout konnte nicht geladen werden“ bleibt optional im Header.【F:layout-editor/src/presenters/header-controls.ts†L364-L381】
+4. Aus Nutzersicht beschreibt der User-Wiki-Eintrag [Setup-Workflows › View-Bindings](../../docs/README.md#setup-workflows) die erwartete Wiederherstellung.
 
 ## Fehlerbilder und UI-Reaktionen
 
@@ -59,3 +71,4 @@ Bei Erfolg werden Metadaten wie `createdAt`, `updatedAt` und `schemaVersion` ges
 ## Offene Aufgaben
 
 - Workflow-Dokumentation zwischen Bibliothek und UI prüfen: [`documentation-audit-ui-experience.md`](../todo/documentation-audit-ui-experience.md).
+- Sequenzdiagramme & Accessibility-Kriterien nachziehen: [`ui-accessibility-and-diagrams.md`](../todo/ui-accessibility-and-diagrams.md).
