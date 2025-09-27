@@ -11,7 +11,6 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 - `presenter-doc-audit.md` – Audit der Presenter-Dokumentation hinsichtlich Telemetrie-, Drag/Drop- und Fehler-Workflows.
 - `state-model-doc-audit.md` – Konsistenzcheck der State-/Telemetry-Dokumentation inklusive fehlendem Stage-Instrumentation-Guide.
 - `tooling-doc-audit.md` – Index- und Strukturabgleich der Tooling- und Testdokumentation.
-- `ui-components-doc-audit.md` – Aktualisierung der UI-Komponenten-Konventionen rund um den `DiffRenderer`.
 
 ## Backlog-Übersicht
 
@@ -23,7 +22,6 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 | [`presenter-doc-audit.md`](presenter-doc-audit.md) | Dokumentation | Mittel | Presenter-Workflows zu Telemetrie, Drag/Drop und Fehlern nachziehen. |
 | [`state-model-doc-audit.md`](state-model-doc-audit.md) | Dokumentation | Hoch | Stage-Instrumentation-Guide neu erstellen und Verweise korrigieren. |
 | [`tooling-doc-audit.md`](tooling-doc-audit.md) | Tooling-Dokumentation | Mittel | Docs-Index und Test-README an den aktuellen Strukturstand anpassen. |
-| [`ui-components-doc-audit.md`](ui-components-doc-audit.md) | Dokumentation | Mittel | `DiffRenderer`-Konventionen aktualisieren und Scope-Nutzung erläutern. |
 
 ## Konventionen
 
