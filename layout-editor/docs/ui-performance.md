@@ -16,6 +16,7 @@ The component layer now renders through a lightweight diffing helper that keeps 
 - Element-specific listeners (pointer move/leave/down) register on the per-node scope. When an element disappears, its interaction listeners disappear with it, preventing leaks between sessions.
 - Drag interactions run inside `LayoutEditorStore.runInteraction()`. The store batches `move`/`resize` plus layout reflows into a single state emission per frame, so the DOM stays in sync without flooding listeners.
 - Drag interactions now call `LayoutEditorStore.flushExport()` once the pointer is released. During the drag, frame updates emit only `state` events, batching export payloads until the interaction settles so JSON serialization does not run on every frame.
+- `focusElement()` recentres the camera on the requested element, emits a `StageCameraObserver` event with reason `focus`, and immediately applies the translated transform so other presenters (e.g. the structure panel) can keep camera state and telemetry in lock-step.
 - Camera motions emit `StageCameraObserver` telemetry hooks. Register them through `StageController` and clean them up as described in [Stage instrumentation › Kamera-Telemetrie](../../docs/stage-instrumentation.md#kamera-telemetrie).
 
 ## Structure tree component
@@ -23,6 +24,8 @@ The component layer now renders through a lightweight diffing helper that keeps 
 - The structure tree uses nested diff renderers: the root list and every container node get their own keyed renderer, allowing selective expansion/collapse updates without recreating sibling entries.
 - Entry metadata (title/meta spans, child list, and drag state) stays cached across updates; the diff cycle refreshes text, selection, and child counts in place.
 - Drag-and-drop feedback and drop-zone listeners are routed through component scopes so highlights and drag signals reset automatically after reorder/reparent operations.
+- The presenter feeds selection back into the store and requests `StageController.focusElement()` so the camera jump and the telemetry event fire before the next render. This keeps the canvas centred on the same element as the tree.
+- Drag gestures bridge through `LayoutEditorStore.setDraggedElement()` while reparent/reorder handlers defer to `assignElementToContainer()` / `moveChildInContainer()` after validating the current container, keeping stage overlays and keyboard focus consistent.
 
 ## Export payload batching
 
@@ -34,6 +37,11 @@ The component layer now renders through a lightweight diffing helper that keeps 
 
 - `UIComponent.createScope()` centralises cleanup. Always register DOM listeners or observers for dynamic nodes on the provided scope. Global interactions (e.g. `window` pointer tracking) remain on the component-level cleanup stack and are explicitly torn down by the interaction handlers.
 - Tests assert that removing a node tears down its scope-bound listeners, providing a regression guard against future leaks.
+
+## Header controls feedback
+
+- `HeaderControlsPresenter` wires the status banner component so persistence failures surface inline. The presenter normalises thrown errors via `describeLayoutPersistenceError()`, maps them to a deterministic code/description/help trio, and mirrors the same message through an Obsidian `Notice` when the host runtime exposes it.
+- The derived banner state deduplicates raw error messages that already match the curated variants, ensuring the UI renders deterministic, localised content while still exposing unhandled error strings for diagnosis.
 
 Keeping these rules in mind ensures the rendering layer remains incremental, predictable, and cheap to update even for large documents.
 
