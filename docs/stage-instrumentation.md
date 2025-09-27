@@ -44,6 +44,20 @@ import {
 
 Alle Felder sind reine JSON-kompatible Werte und können ohne weitere Serialisierung geloggt oder persistiert werden.
 
+## Kamera-Telemetrie
+
+Die Stage sendet neben Interaktions-Hooks auch Kamera-Bewegungen. Über `StageComponent.observeCamera()` können Observer für die Viewport-Lage registriert werden; die Methode liefert ein Cleanup-Lambda zurück, das den Observer wieder deregistriert und in `StageComponent.onDestroy()` automatisch ausgeführt wird. Der optionale `StageCameraObserver` kennt drei Callbacks:
+
+- **`onCenter`** – feuert, wenn die Kamera zentriert wird (Initialisierung oder Fokus auf ein Element). Das Event enthält `reason`, die aktuelle und die gewünschte Viewport-Beschreibung (`current`/`target`) sowie die Canvas-Ausmaße.
+- **`onScroll`** – reagiert auf Panning über Pointer- oder Alt+Drag-Gesten. Neben `current`/`target` werden `delta` und die `pointerId` der Interaktion mitgeliefert.
+- **`onZoom`** – liefert Zoom-Faktor, Pointer-Position im Viewport und die berechneten Welt-Koordinaten des Cursor-Fokus.
+
+Alle Events transportieren `StageCameraViewport`-Snapshots inklusive `offset`, `scale` und abgeleiteten Weltkoordinaten. Die Stage iteriert über eine Kopie der Observer-Liste, sodass sich Callbacks während eines Events sicher deregistrieren können.
+
+Der `StageController` reicht ein Telemetrie-Objekt über das `cameraTelemetry`-Feld an die Komponente weiter und verwaltet das Cleanup via Rückgabewert von `observeCamera()` in `dispose()`. Damit werden Observers zuverlässig entfernt, sobald der Controller zerstört oder der Host entkoppelt wird. Siehe die Implementierung in [`layout-editor/src/presenters/stage-controller.ts`](../layout-editor/src/presenters/stage-controller.ts) und die Observer-Definition in [`layout-editor/src/ui/components/stage.ts`](../layout-editor/src/ui/components/stage.ts).
+
+Tests in [`layout-editor/tests/stage-camera.test.ts`](../layout-editor/tests/stage-camera.test.ts) decken Initial-Centering, Scroll-, Zoom- und Fokus-Sequenzen ab und stellen sicher, dass die Telemetrie die berechneten Viewports und Deltas korrekt meldet.
+
 ## Tests & Qualitätssicherung
 
 Die Datei [`layout-editor-store.instrumentation.test.ts`](../layout-editor/tests/layout-editor-store.instrumentation.test.ts)

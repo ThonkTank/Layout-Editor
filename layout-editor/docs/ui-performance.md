@@ -16,6 +16,7 @@ The component layer now renders through a lightweight diffing helper that keeps 
 - Element-specific listeners (pointer move/leave/down) register on the per-node scope. When an element disappears, its interaction listeners disappear with it, preventing leaks between sessions.
 - Drag interactions run inside `LayoutEditorStore.runInteraction()`. The store batches `move`/`resize` plus layout reflows into a single state emission per frame, so the DOM stays in sync without flooding listeners.
 - Drag interactions now call `LayoutEditorStore.flushExport()` once the pointer is released. During the drag, frame updates emit only `state` events, batching export payloads until the interaction settles so JSON serialization does not run on every frame.
+- Camera motions emit `StageCameraObserver` telemetry hooks. Register them through `StageController` and clean them up as described in [Stage instrumentation › Kamera-Telemetrie](../../docs/stage-instrumentation.md#kamera-telemetrie).
 
 ## Structure tree component
 
