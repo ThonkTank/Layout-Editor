@@ -1,20 +1,64 @@
 # Presenters
 
-This folder contains presenter classes that bridge application state to reusable UI components. They subscribe to the `LayoutEditorStore`, translate store events into component updates, and coordinate cross-component behaviour such as focus management or stage synchronisation. Refer to the [UI rendering guidelines](../../docs/ui-performance.md) for architectural background.
+Presenter-Klassen überbrücken das State-Layer und wiederverwendbare UI-Komponenten. Sie hören auf den `LayoutEditorStore`, übersetzen State-Events in gezielte UI-Aktualisierungen und koordinieren Fokus- sowie Telemetrie-Signale zwischen Tree, Stage und Kopfzeile. Architekturhinweise zum Rendering finden sich in den [UI-Performance-Guidelines](../../docs/ui-performance.md).
 
-## Files
+## Struktur
 
-- `header-controls.ts` – Presenter that wires header controls (layout import/export, save/load) to the store, normalises persistence errors, and emits notices for the host Obsidian app.
-- `stage-controller.ts` – Thin controller around `StageComponent` that renders the canvas, ensures container defaults exist before interactions, and keeps the stage in sync with selection and canvas size changes.
-- `structure-panel.ts` – Presenter for the structure tree sidebar that mirrors the layout hierarchy, forwards drag/drop gestures to the store, and keeps the stage focused on the selected element.
+```
+presenters/
+├── README.md              – Dokument (dieser Leitfaden)
+├── header-controls.ts     – HeaderControlsPresenter für Bibliothek & Persistenzmeldungen
+├── stage-controller.ts    – StageController für Canvas-Rendering & Kamera-Telemetrie
+└── structure-panel.ts     – StructurePanelPresenter für Tree-Auswahl & Drag/Drop
+```
 
-## Conventions & Extension Points
+## Gemeinsame Konventionen
 
-- Presenters must stay side-effect free outside of store callbacks. Perform DOM updates through `renderComponent` and call `destroy()` during `dispose()` to avoid leaks.
-- Subscribe to the store with `store.subscribe` and cache the unsubscribe handler. Always emit initial state to components so they can render before the first event tick.
-- Encapsulate cross-component communication (e.g. stage focus on selection) inside presenters; avoid directly coupling UI components.
-- To add a new presenter, expose a class/function that accepts its dependencies (host element, store, collaborators) as constructor parameters and returns a disposer. Place tests or usage documentation in the component or higher-level feature docs; link to deep-dive UI notes in [`../../docs/ui-performance.md`](../../docs/ui-performance.md) or the [view registry guide](../../docs/view-registry.md) where relevant.
+- Presenter kapseln DOM-Zugriffe in Komponenten. Verwende `renderComponent` für Mounting und rufe `destroy()` in `dispose()`, damit Event-Listener sicher freigegeben werden.
+- Jeder Presenter cached das Unsubscribe-Handle von `store.subscribe`. Direkt nach der Initialisierung muss eine Snapshot-Synchronisierung erfolgen, damit Komponenten bereits vor dem ersten Store-Event konsistent rendern.
+- Cross-Kommunikation (Fokus, Drag-Status, Fehlerbanner) erfolgt ausschließlich über Presenter-APIs statt über direkte Komponentenkopplung.
+- Neue Presenter sollten ihre Abhängigkeiten (Host-Element, Store, Kollaborateure) im Konstruktor annehmen und eine `dispose()`-Methode anbieten. Verlinke vertiefende Dokumentation in [`../../docs/ui-performance.md`](../../docs/ui-performance.md) oder im [View-Registry-Guide](../../docs/view-registry.md).
 
----
+## StageController (`stage-controller.ts`)
 
-> **To-Do:** Details zu Kamera-Fokus, Drag/Drop und Fehlerpfaden werden im [Presenter-Dokumentations-Audit](../../../todo/presenter-doc-audit.md) nachgezogen.
+Der `StageController` initialisiert `StageComponent`, synchronisiert Layout-Snapshots mit dem Canvas und sorgt dafür, dass Container-Defaults (`ensureContainerDefaults`) bereitstehen, bevor Pointer-Interaktionen laufen. Bei jeder Store-Änderung wird die Stage mit Elementliste, Auswahl sowie Canvas-Größe aktualisiert.
+
+### Kamera-Telemetrie & Fokusweitergabe
+
+- Über das optionale `cameraTelemetry`-Argument reicht der Controller einen `StageCameraObserver` an die Komponente weiter. `StageComponent.observeCamera()` liefert ein Cleanup-Lambda, das der Controller in `dispose()` aufruft. Siehe [Stage-Instrumentierung › Kamera-Telemetrie](../../../docs/stage-instrumentation.md#kamera-telemetrie).
+- `focusElement()` richtet die Kamera auf das angeforderte Element aus, triggert dabei einen Telemetrie-Event (`reason: "focus"`) und stellt sicher, dass Tree-Trigger (z. B. aus dem Structure Panel) im selben Frame ein konsistentes Viewport-Abbild erhalten.
+- Die Fokusweitergabe funktioniert bidirektional: Der Controller reagiert auf Store-Selektion, während externe Presenter gezielt `focusElement()` invokieren, um Kamera-Zustand und Stage-Cursor im Gleichschritt mit Tree-Auswahl zu halten.
+
+## StructurePanelPresenter (`structure-panel.ts`)
+
+Der Presenter versorgt den Strukturbaum (`StructureTreeComponent`) mit Snapshots aus dem Store, inklusive Auswahl- und Drag-Status. Er meldet sich an Tree-Callbacks an und übersetzt sie in Store-Mutationen.
+
+### Fokus-Handshake Tree ⇄ Stage
+
+- `handleSelect()` ruft das bereitgestellte `onSelectElement`-Callback auf, damit der Store die Auswahl aktualisiert. Direkt danach zieht der Presenter das Element aus dem Store und delegiert an `StageController.focusElement()`, womit Tree-Auswahl, Stage-Kamera und Telemetrie synchron bleiben.
+- Die Stage reagiert auf die Telemetrie mit einem `focus`-Event, sodass Observer (Analytics, Tests) genau wissen, welcher Trigger den Sprung ausgelöst hat.
+
+### Drag-and-Drop-Lebenszyklen
+
+- `StructureTreeComponent` liefert Drag-Events für Reparenting (`onReparent`), Reorder (`onReorder`) und Drag-State (`onDragStateChange`).
+- Beim Drag-Start setzt der Presenter `store.setDraggedElement(id)`. Dadurch können Tree und Stage Overlays denselben Drag-Status rendern.
+- Beim Reparent prüft der Presenter nur die gewünschte Ziel-Container-ID und ruft `store.assignElementToContainer()`, wodurch das Store-Layer Validierungen (z. B. Container-Typen) übernimmt.
+- Reorder-Operationen lesen zunächst Container/Index-Daten aus dem Store, berechnen das Ziel-Offset relativ zum aktuellen Index und reichen es an `store.moveChildInContainer()` weiter. Ungültige Moves (fehlende Container, unterschiedliche Eltern) werden früh verworfen.
+- Nach dem Drop setzt das Store-Update `draggedElementId` zurück, was der Tree bei der nächsten State-Synchronisierung erkennt und UI-Highlights zurücksetzt. Die Stage erhält denselben Snapshot und entfernt Drag-Overlays synchron.
+
+## HeaderControlsPresenter (`header-controls.ts`)
+
+Der Header-Presenter bündelt Element-Picker, Canvas-Größeneingaben, Exportansicht und Bibliotheksaktionen. Er reagiert auf Store-State, aktualisiert Lade-Indikatoren (`isImportingLayout`, `isSavingLayout`) und befüllt das Export-Textarea.
+
+### Fehlerpfade & Banner/Notice-Abstimmung
+
+- Persistenzfehler werden über `describeLayoutPersistenceError()` normalisiert. Die Funktion extrahiert Codes aus Fehlermeldungen (`normalizePersistenceError`), mappt sie via `PERSISTENCE_CODE_MAP` auf lokalisierte Bannertexte und ergänzt Handlungsempfehlungen.
+- `showPersistenceError()` speichert die View-Model-Daten, instanziiert bei Bedarf `StatusBannerComponent` und aktualisiert dessen Zustand. Parallel wird `showNotice()` mit `noticeMessage` aufgerufen, damit Obsidian-Notices dieselbe Botschaft transportieren.
+- Erfolgreiche Saves (`saveLayout()`) rufen `clearPersistenceError()`, wodurch Banner-Status und gespeicherter Fehler gelöscht werden. Während `isSavingLayout === true` bleibt ein vorhandenes Banner sichtbar, um Flackern zwischen Retries zu vermeiden.
+- Importfehler spiegeln sich ausschließlich als Notice (`showNotice("Konnte Layout nicht laden")`) wider, da sie keinen persistenten Bannerzustand benötigen.
+
+## Weiterführende Dokumentation
+
+- [UI Rendering Pipeline](../../docs/ui-performance.md) – Performance-Charakteristika der Stage, Tree- und Header-Komponenten.
+- [Stage-Instrumentierung & Telemetrie](../../../docs/stage-instrumentation.md) – Detailbeschreibung der Kamera- und Interaktions-Hooks.
+- [View Registry](../../docs/view-registry.md) – Integration der Presenter in den View-Lifecycle.
