@@ -115,3 +115,7 @@ View-Bindings koppeln externe Render-Views an den Layout-Editor. Weitere Hinterg
 - [`docs/persistence-errors.md`](./persistence-errors.md) – Hintergrund zu Persistenz- und Migrationfehlern, die bei `saveLayout` oder `loadLayout` auftreten können.
 - [`docs/tooling.md`](./tooling.md) – Hinweise zu Tests und Bundling rund um die API.
 
+
+## Offene Aufgaben
+
+- Integrationsleitfäden und Versionierung prüfen: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).

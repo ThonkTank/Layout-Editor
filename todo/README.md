@@ -5,12 +5,20 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 ## Strukturdiagramm
 
 - `README.md` – Index des Backlogs, beschreibt Struktur, Konventionen und Metadaten-Standard.
+- `documentation-audit-state-model.md` – Audit der Dokumentation für State-, Datenmodell- und History-Flows.
+- `documentation-audit-ui-experience.md` – Review der UI-, Presenter- und Interaktionsdokumentation.
+- `documentation-audit-configuration-settings.md` – Überprüfung der Konfigurations- und Settings-Dokumentation.
+- `documentation-audit-integration-api.md` – Validierung der Integrations- und Plugin-API-Dokumente.
 - `store-snapshot-immutability-tests.md` – Regressionstest für unveränderliche Store-Snapshots.
 
 ## Backlog-Übersicht
 
 | Datei | Kategorie | Priorität | Kurzbeschreibung |
 | --- | --- | --- | --- |
+| [`documentation-audit-state-model.md`](documentation-audit-state-model.md) | Dokumentation | Hoch | Audit für State-, Datenmodell- und History-Dokumentation durchführen. |
+| [`documentation-audit-ui-experience.md`](documentation-audit-ui-experience.md) | Dokumentation | Mittel | UI-, Presenter- und Workflow-Dokumentation auf Lücken prüfen. |
+| [`documentation-audit-configuration-settings.md`](documentation-audit-configuration-settings.md) | Dokumentation | Mittel | Konfigurations-, Settings- und Fehlerpfad-Dokumentation abgleichen. |
+| [`documentation-audit-integration-api.md`](documentation-audit-integration-api.md) | Dokumentation | Mittel | Integrations- und Plugin-API-Guides auf Vollständigkeit prüfen. |
 | [`store-snapshot-immutability-tests.md`](store-snapshot-immutability-tests.md) | Tests | Mittel | Regressionstest sicherstellen, dass Store-Snapshots außerhalb des Stores nicht mutiert werden können. |
 
 Sobald neuer Handlungsbedarf entsteht, lege eine eigene Markdown-Datei in diesem Ordner an und verlinke sie in dieser Tabelle nach Priorität.

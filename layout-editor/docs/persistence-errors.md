@@ -30,3 +30,7 @@ werden.
 
 - [Dokumentenindex](./README.md)
 - Verwandt: [Layout-Bibliothek](./layout-library.md)
+
+## Offene Aufgaben
+
+- Fehlerpfad- und Wiki-Abgleich durchführen: [`documentation-audit-configuration-settings.md`](../todo/documentation-audit-configuration-settings.md).

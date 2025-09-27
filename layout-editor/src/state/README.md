@@ -16,3 +16,7 @@ The state layer coordinates mutable editor state, history, and event emission. I
 - Structural behaviour (parenting, child order, validation) is implemented in the [`model`](../model/README.md) layer. Prefer to add tree capabilities there and call them from the store.
 - For a data contract overview, refer to the [data model documentation](../../docs/data-model-overview.md). Keep store exports aligned with the documented schema so persistence and tests continue to pass.
 - Stage telemetry must be instrumented through `stageInteractionTelemetry`. Extend the `StageInteractionEvent` union and observer/logger interfaces together, keep payloads JSON-serialisable, update [`layout-editor-store.instrumentation.test.ts`](../../tests/layout-editor-store.instrumentation.test.ts), and document the new events in the [stage instrumentation guide](../../../docs/stage-instrumentation.md). Always reset hooks via `resetStageInteractionTelemetry()` in tests to avoid leaks.
+
+## Offene Punkte
+
+- Siehe [`documentation-audit-state-model.md`](../../todo/documentation-audit-state-model.md) für den Soll-Ist-Abgleich der State- und History-Dokumentation.

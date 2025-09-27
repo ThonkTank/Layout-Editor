@@ -55,3 +55,7 @@ Keeping these rules in mind ensures the rendering layer remains incremental, pre
 
 - [Documentation index](./README.md)
 - Related: [View Registry](./view-registry.md)
+
+## Offene Aufgaben
+
+- Interaktions- und Performance-Dokumentation konsolidieren: [`documentation-audit-ui-experience.md`](../todo/documentation-audit-ui-experience.md).

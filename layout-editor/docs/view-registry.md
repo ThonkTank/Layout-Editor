@@ -45,3 +45,7 @@ Entwickler können diese Fehler auffangen, um alternative Workflows anzubieten (
 
 - [Dokumentenindex](./README.md)
 - Verwandt: [Plugin-API](./plugin-api.md)
+
+## Offene Aufgaben
+
+- Integrationspfade und Fehlerszenarien dokumentieren: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).

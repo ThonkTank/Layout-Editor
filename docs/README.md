@@ -25,3 +25,7 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - Technische Detailentscheidungen findest du weiterhin direkt in den Deep-Dive-Dateien unter `layout-editor/docs/`.
 - Ergänzungen oder neue Artikel sollten hier verlinkt werden, damit Anwender:innen einen konsistenten Einstiegspunkt besitzen.
 - Offene technische Maßnahmen sind im [`../todo/`](../todo/) Verzeichnis dokumentiert und bei den jeweiligen Modulen verlinkt.
+
+## Offene Aufgaben
+
+- Integrations-Guides gegen Soll-Zustand prüfen: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).

@@ -31,3 +31,7 @@ The diff-first approach keeps history storage proportional to the number of modi
 
 - [Documentation index](./README.md)
 - Related: [Data model overview](./data-model-overview.md)
+
+## Offene Aufgaben
+
+- Konsistenzcheck und Ergänzungen siehe [`documentation-audit-state-model.md`](../todo/documentation-audit-state-model.md).
