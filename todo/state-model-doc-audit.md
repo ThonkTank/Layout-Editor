@@ -1,6 +1,6 @@
 ---
-status: open
-priority: high
+status: in-review
+priority: medium
 area:
   - documentation
 owner: unassigned
@@ -9,22 +9,22 @@ tags:
   - telemetry
 ---
 
-# State/model documentation audit
+# Stage/state telemetry documentation verification
 
 ## Originalkritik
-- Das State-README verweist auf einen nicht mehr existierenden "stage instrumentation"-Guide, wodurch Telemetrie-Konventionen nirgendwo verbindlich dokumentiert sind.
-- Die Store-Dokumentation beschreibt Telemetrie-Ereignisse nur implizit; ohne zentrale Referenz droht Drift zwischen `stageInteractionTelemetry` und künftigen Erweiterungen.
+- Die neue Stage-Instrumentation-Dokumentation ist erstellt, wurde jedoch noch nicht mit Analytics- und Runtime-Teams gegengeprüft.
+- Snapshot- und Export-Konventionen im State-Store referenzieren den Guide indirekt; ohne Review drohen Terminologie-Drifts in künftigen Iterationen.
 
 ## Kontext
-Die Telemetrie-Pipeline (`stageInteractionTelemetry` in `layout-editor/src/state/interaction-telemetry.ts`) emittiert Ereignisse wie `interaction:start`, `interaction:end`, `canvas:size` und `clamp:step`. Das State-README fordert weiterhin, neue Events im nicht vorhandenen `layout-editor/docs/stage-instrumentation.md` zu dokumentieren. Gleichzeitig hängt die Konsistenz von Snapshot-Emissionen und Export-Payloads an `cloneLayoutElement`; ohne eine aktualisierte Referenz fällt die Abstimmung zwischen Store-, Modell- und Analytics-Teams schwer.
+Der Guide [`docs/stage-instrumentation.md`](../layout-editor/docs/stage-instrumentation.md) beschreibt alle Telemetrie-Events, Pflichtfelder und Reset-Regeln. State- und Presenter-Readmes verweisen nun darauf. Bevor das ursprüngliche Audit geschlossen werden kann, müssen wir sicherstellen, dass die Pipeline (`layout-editor/src/state/interaction-telemetry.ts`) und die Analytics-Observer denselben Vertragsstand nutzen und dass historische Dashboards auf neue Eventfelder vorbereitet sind.
 
 ## Betroffene Module
-- `layout-editor/src/state/README.md`
 - `layout-editor/src/state/interaction-telemetry.ts`
-- `layout-editor/docs/data-model-overview.md`
-- Fehlende Datei `layout-editor/docs/stage-instrumentation.md`
+- `layout-editor/docs/stage-instrumentation.md`
+- `layout-editor/src/presenters/README.md`
+- Analytics-/Observer-Konfiguration (extern dokumentiert)
 
 ## Lösungsideen
-- Stage-Instrumentations-Guide neu erstellen: Ereignis-Typen, Pflichtfelder, Reset-Konventionen und Logger-Verhalten beschreiben sowie Beispiel-Implementierungen für Observer/Logger aufnehmen.
-- State-README und übrige Referenzdokumente auf den neuen Guide verlinken und veraltete Hinweise auf nicht vorhandene Dateien entfernen.
-- Prüfen, ob weitere Dokumente (User-Wiki, API-Referenzen) auf Snapshots und Telemetrie verweisen und die Terminologie vereinheitlichen.
+- Review-Termin mit Analytics-Team einplanen, um Eventnamen, Pflichtfelder und Reset-Semantik abzugleichen.
+- Dashboard- und Alert-Konfigurationen darauf prüfen, ob neue Pflichtfelder (`camera`, `resetReason` etc.) korrekt verarbeitet werden.
+- Nach Abschluss des Reviews das Audit als erledigt markieren und aus dem Backlog entfernen.
