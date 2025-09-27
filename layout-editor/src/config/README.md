@@ -11,3 +11,7 @@ Configuration sources define how the editor loads domain-specific element metada
 - Always route configuration reads through the exported functions instead of accessing storage directly. They handle caching, validation, and default materialisation.
 - When introducing new configuration keys, update both the TypeScript interfaces and validation logic before extending the persisted schema. Document the new fields in the [domain configuration guide](../../docs/domain-configuration.md).
 - Domain source selection is controlled by the settings layer; new sources should integrate with [`../settings`](../settings/README.md) so users can toggle them at runtime.
+
+## Offene Punkte
+
+- Validierungs- und Fehlerdokumentation prüfen: [`documentation-audit-configuration-settings.md`](../../todo/documentation-audit-configuration-settings.md).

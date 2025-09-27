@@ -1,0 +1,36 @@
+---
+status: open
+priority: high
+area:
+  - documentation
+  - state
+owner: unassigned
+tags:
+  - layout-editor-core
+  - data-model
+links:
+  - layout-editor/src/state/README.md
+  - layout-editor/src/model/README.md
+  - layout-editor/docs/data-model-overview.md
+---
+
+# State- und Datenmodell-Dokumentation verifizieren
+
+## Originalkritik
+- Die bestehenden Readmes zum State-Layer und zum Datenmodell verweisen aufeinander, enthalten jedoch unterschiedliche Details zu Snapshot-Verträgen, Serialisierung und Schema-Evolution. Es ist unklar, ob alle aktuell implementierten Flows (History, Export, Telemetrie) vollständig dokumentiert sind und konsistente Begrifflichkeiten verwenden.
+
+## Kontext
+- Der Layout-Editor lehnt sich stark an das zentrale Store- und Modellkonzept an. Fehlerhafte oder lückenhafte Dokumentation führt zu Missverständnissen bei Integratoren und gefährdet die Wartbarkeit der Kernfunktionen.
+- Insbesondere neuere Funktionen wie differenzbasierte Patches, elementare Constraint-Validierungen und Telemetrie-Hooks benötigen einen Soll-Zustand im Wiki, damit Tests und Architekturentscheidungen nachvollziehbar bleiben.
+
+## Betroffene Module
+- `layout-editor/src/state/README.md`
+- `layout-editor/src/model/README.md`
+- `layout-editor/docs/data-model-overview.md`
+- `layout-editor/docs/history-design.md`
+
+## Lösungsideen
+- Soll-Ist-Abgleich für alle State-APIs und Datenstrukturen erstellen und fehlende Abschnitte in den Readmes bzw. im User-Wiki ergänzen.
+- Begrifflichkeiten (z. B. *LayoutSnapshot*, *Patch*, *HistoryFrame*) vereinheitlichen und mit Glossar-Abschnitt verlinken.
+- Dokumentationslücken mit konkreten Aufgaben nachziehen (z. B. fehlende Sequenzdiagramme, unbeschriebene Edge-Cases) und anschließend Tests referenzieren.
+- Ergebnis im User-Wiki zusammenfassen und dort auf die detaillierten Modul-Dokumente verweisen.

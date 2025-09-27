@@ -115,3 +115,7 @@ hervorgehoben. Details zur Struktur der Bibliothek findest du in
   Änderungen an der JSON-Struktur sollten ausschließlich hier erweitert werden.
 - Tests (`tests/domain-configuration.test.ts`) decken Standardfall, erfolgreiche Vault-Ladung
   und Fehlerszenarien ab und dienen als Referenz für zukünftige Anpassungen.
+
+## Offene Aufgaben
+
+- Validierung & Soll-Dokumentation ergänzen: [`documentation-audit-configuration-settings.md`](../todo/documentation-audit-configuration-settings.md).

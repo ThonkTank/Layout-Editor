@@ -14,3 +14,7 @@ Settings modules integrate the layout editor with Obsidian's preferences UI and 
 - Wenn Einstellungen Laufzeitdaten beeinflussen (z. B. Domänenquelle → Seed-Sync), registriere Change-Listener wie `onDomainConfigurationSourceChange` und delegiere an die zuständigen Services.
 - Document user-facing workflows for new settings in the [domain configuration documentation](../../docs/domain-configuration.md) or other relevant guides under `docs/`.
 - When adding new toggles, define the underlying state or configuration first (see [`../config`](../config/README.md)) and inject the render helper into `settings-tab.ts`.
+
+## Offene Punkte
+
+- Soll-Dokumentation der Einstellungen aktualisieren: [`documentation-audit-configuration-settings.md`](../../todo/documentation-audit-configuration-settings.md).

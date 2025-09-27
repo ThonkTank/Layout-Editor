@@ -25,4 +25,4 @@ Add new test files under `tests/` using the `*.test.ts` naming convention to hav
 
 ## Offene Aufgaben
 
-Derzeit keine. Ergänze hier einen Verweis, sobald im [`../../todo/`](../../todo/) Ordner neue Maßnahmen für das Tooling dokumentiert werden.
+- Integrationsdokumentation inkl. Tooling-Anforderungen prüfen: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).

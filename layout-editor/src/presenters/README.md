@@ -62,3 +62,7 @@ Der Header-Presenter bündelt Element-Picker, Canvas-Größeneingaben, Exportans
 - [UI Rendering Pipeline](../../docs/ui-performance.md) – Performance-Charakteristika der Stage, Tree- und Header-Komponenten.
 - [Stage-Instrumentierung & Telemetrie](../../../docs/stage-instrumentation.md) – Detailbeschreibung der Kamera- und Interaktions-Hooks.
 - [View Registry](../../docs/view-registry.md) – Integration der Presenter in den View-Lifecycle.
+
+## Offene Punkte
+
+- Dokumentationslücken und Workflow-Abgleich siehe [`documentation-audit-ui-experience.md`](../../todo/documentation-audit-ui-experience.md).

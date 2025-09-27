@@ -23,3 +23,7 @@ Dieser Ordner enthält die UI-Hilfsfunktionen des Layout-Editors – insbesonder
 - Architektur-Überblick: [`../README.md`](../README.md)
 - Performance-Guidelines für UI-Widgets: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
 - Projektweite Einordnung & Workflows: [`../../../README.md`](../../../README.md)
+
+## Offene Punkte
+
+- Dokumentationsabgleich für Interaktionen und Presenter: [`documentation-audit-ui-experience.md`](../../todo/documentation-audit-ui-experience.md).

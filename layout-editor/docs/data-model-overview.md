@@ -80,3 +80,7 @@ fields stay in sync with the persisted layout schema:
 
 - [Documentation index](./README.md)
 - Related: [Layout history design](./history-design.md)
+
+## Offene Aufgaben
+
+- Lückenanalyse und Glossar-Abgleich: [`documentation-audit-state-model.md`](../todo/documentation-audit-state-model.md).

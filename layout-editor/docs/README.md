@@ -19,7 +19,10 @@ related background material.
 
 ## To-Do
 
-- Store-Snapshots werden tief geklont. Details zur Nutzung der neuen Befehle (`moveElement`, `resizeElement`, `applyElementSnapshot`) stehen im [State-README](../src/state/README.md).
+- State-/History-Dokumentation auf Konsistenz prüfen: [`documentation-audit-state-model.md`](../todo/documentation-audit-state-model.md).
+- UI-Workflows und Interaktionen vollständig dokumentieren: [`documentation-audit-ui-experience.md`](../todo/documentation-audit-ui-experience.md).
+- Konfigurations- und Fehlerpfad-Dokumentation abgleichen: [`documentation-audit-configuration-settings.md`](../todo/documentation-audit-configuration-settings.md).
+- Integrations- und API-Guides aktualisieren: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).
 
 For a high-level, user-facing overview of workflows and features, refer to the root
 [`docs/`](../../docs/) directory.
