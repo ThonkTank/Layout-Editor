@@ -1,85 +1,74 @@
 # Layout Editor – Data Model Overview
 
-## Layout tree service
+## Struktur
 
-The editor no longer keeps element relationships in a flat array. A dedicated `LayoutTree`
-model lives in `src/model/layout-tree.ts` and is responsible for:
+```
+docs/
+├─ data-model-overview.md
+├─ history-design.md
+└─ README.md
+```
 
-- O(1) lookup of elements by `id` via an internal `Map`.
-- Owning the canonical parent/child relationship while enforcing validation during
-  mutations.
-- Validating parent changes (preventing self-parenting or cycles) before mutating the
-  structure.
-- Keeping container order stable during reorder operations and sanitising missing or
-  invalid child references when hydrating persisted layouts.
+## Layout Tree Service
 
-`LayoutTree` keeps mutable node objects internally so store commands can operate on shared
-references, but every public snapshot is re-cloned before leaving the store. The tree
-therefore defines the canonical order and parenting data while the `LayoutEditorStore`
-converts that mutable state into detached views.
+Der Editor verwaltet Layout-Elemente nicht mehr in einer flachen Liste. Ein dedizierter `LayoutTree` (siehe `src/model/layout-tree.ts`) verantwortet:
 
-## Store integration
+- O(1)-Lookups per `Map` und das Halten einer globalen Ordnungssequenz für Wurzel-Elemente.
+- Validierung von Elternwechseln (keine Selbstreferenzen, keine Zyklen, Ziel muss Container sein).
+- Synchronisation von `parentId` und abgeleiteten `children`-Arrays inklusive Bereinigung fehlender Referenzen.
+- Sanitisierung persistierter Strukturen: fehlende Eltern setzen `parentId` auf `undefined`, Container ohne gültige Kinder liefern ein leeres Array.
 
-`LayoutEditorStore` delegates every structural mutation to `LayoutTree`. Instead of
-manually pushing/popping `children` arrays, store methods call the tree service to:
+Intern bleiben Nodes mutierbar, doch jede öffentliche Abgabe (z. B. für den Store) erfolgt via `cloneLayoutElement`, um unbeabsichtigte Fremdmutationen zu vermeiden.
 
-- Insert new elements (with optional parent assignment).
-- Remove elements, automatically detaching their children.
-- Re-parent elements and move children inside a container.
+## Store Integration
 
-After each mutation the store synchronises its public state via a tree snapshot to ensure
-listeners and history snapshots always reflect the canonical structure.
+`LayoutEditorStore` delegiert alle strukturellen Mutationen an den `LayoutTree`:
 
-### Snapshot semantics
+- Einfügen (`insert`), Entfernen (`remove`) und Aktualisieren (`update`) von Elementen.
+- Elternwechsel (`setParent`) und Sortierung (`moveChild`).
+- Container-Layouting (`applyContainerLayout`) basiert auf den vom Tree gelieferten Kinderschnappschüssen.
 
-- `LayoutEditorStore` uses `cloneLayoutElement` to deep-clone every node when capturing
-  state, guaranteeing that emitted `state` events and undo/redo snapshots are detached
-  copies.
-- Clones include derived arrays (`attributes`, `children`, `options`), optional
-  `layout`/`viewState` objects and maintain JSON-serialisable payloads to keep persistence
-  deterministic.
-- Because snapshots are clones, UI code must apply edits through store commands such as
-  `applyElementSnapshot` or `moveElement` rather than mutating emitted objects in-place.
+Nach jeder Mutation synchronisiert der Store seinen öffentlichen Zustand über `getElementsSnapshot()` und erzeugt daraus geklonte `LayoutElement`-Instanzen.
 
-Undo/redo snapshots serialise through the tree, guaranteeing that replayed snapshots and
-exported JSON remain consistent.
+### Snapshot-Semantik
 
-## LayoutElement type safety
+- `LayoutEditorStore` nutzt `cloneLayoutElement`, das `attributes`, `options`, `children`, `layout`, `viewState` und alle elementaren Felder tief kopiert (JSON-Klon für `viewState`).
+- History-Patches basieren auf `captureSnapshot()`/`restoreSnapshot()` und vergleichen Elemente mit `elementsAreEqual`, wodurch Layout-, Eltern- und ViewState-Änderungen erkannt werden.
+- Undo/Redo und alle `state`-Events geben kopierte Snapshots zurück – Änderungen daran müssen über Store-Befehle zurückgespielt werden.
 
-`LayoutElementType` is now derived from the auto-generated component manifest. This
-produces a literal union of registered element types and prevents invalid element type
-strings at compile time.
+## LayoutElement Datenvertrag
 
-The `children` property on `LayoutElement` is a derived field so consumers treat it as
-read-only output from the tree service.
+`LayoutElementType` wird aus dem Component-Manifest generiert und erzwingt gültige Typ-Strings. Ein `LayoutElement` umfasst:
 
-## Schema highlights
+- **Geometrie:** `x`, `y`, `width`, `height` (ganzzahlig, beim Export gerundet).
+- **Inhalt:** `label`, optionale `description`, `placeholder`, `defaultValue`.
+- **Konfiguration:** optionale `options` (Array), `attributes` (Array), `layout` (`gap`, `padding`, `align`) für Container.
+- **Beziehungen:** `parentId` (oder `undefined`), abgeleitetes `children`-Array (nur Container → ggf. leeres Array, sonst `undefined`).
+- **Integrationen:** `viewBindingId` und `viewState` (JSON-serialisierbar), die für Preview/Runtime genutzt werden.
 
-`LayoutElement` exposes more than structural geometry. The store guarantees the following
-fields stay in sync with the persisted layout schema:
+Der Tree hält interne Mutationsobjekte ohne `children`-Arrays; diese werden erst beim Snapshot hinzugefügt, damit Exporte deterministisch bleiben.
 
-- `label`, `description`, `placeholder` and `defaultValue` are UI-facing content strings
-  that must flow through the store's snapshot/apply helpers to keep history diffs minimal.
-- `options` and `attributes` are always cloned arrays so command handlers can replace them
-  atomically; callers should avoid mutating them directly.
-- `layout` carries container alignment metadata when present and is cloned to avoid
-  leaking mutable references across snapshots.
-- `viewBindingId` and `viewState` bridge into the preview runtime; both are serialisable
-  and emitted as detached copies.
+## Snapshot- und Persistenzformate
 
-## Contract summary
+- **`LayoutEditorSnapshot`** enthält `canvasWidth`, `canvasHeight`, `selectedElementId` und die geklonten `elements`.
+- **`LayoutBlueprint`** entspricht dem Export-Schema ohne Persistenz-Metadaten.
+- **`SavedLayout`** ergänzt `LayoutBlueprint` um `id`, `name`, `createdAt`, `updatedAt`.
+- `serializeState()` erstellt JSON mit gerundeten Canvas-/Element-Werten und trägt die zuletzt gespeicherten Metadaten (`lastSavedLayout*`) in zusätzliche Felder ein (`id`, `name`, `createdAt`, `updatedAt`).
 
-1. `LayoutTree` is the single source of truth for parent/child relationships.
-2. Store clients should continue to rely on `LayoutEditorStore` APIs—direct mutation of
-   `children` arrays is ignored on the next snapshot.
-3. Containers with no children expose an empty array, preserving existing UI logic.
-4. Reparenting and reordering must go through the store so validation rules run and
-   history snapshots remain in sync.
+## Contract Summary
+
+1. `LayoutTree` ist die einzige Quelle für Eltern-/Kind-Beziehungen und Elementreihenfolgen.
+2. Store-Konsumenten interagieren ausschließlich über `LayoutEditorStore`-APIs – direkte Mutationen an Snapshots werden verworfen.
+3. Container ohne Kinder liefern ein leeres `children`-Array; Nicht-Container setzen `children` auf `undefined`.
+4. History- und Export-Flows verlassen sich auf `cloneLayoutElement`; Änderungen daran müssen Tests (`layout-editor-store.instrumentation.test.ts`, `history-limits.test.ts`) berücksichtigen.
+5. Persistenz-JSON bleibt stabil, weil alle Felder JSON-kompatibel sind und ViewStates tief geklont werden.
 
 ## Navigation
 
 - [Documentation index](./README.md)
-- Related: [Layout history design](./history-design.md)
+- [Layout History Design](./history-design.md)
+- [State Layer](../src/state/README.md)
+- [Model Layer](../src/model/README.md)
 
 ## Offene Aufgaben
 

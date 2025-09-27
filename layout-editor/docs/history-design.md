@@ -1,36 +1,50 @@
 # Layout History Design
 
+## Struktur
+
+```
+docs/
+├─ data-model-overview.md
+├─ history-design.md
+└─ README.md
+```
+
 ## Overview
 
-The layout editor tracks state mutations through the `LayoutHistory` store. The store exposes the same public API as before (`push`, `undo`, `redo`, etc.), but the underlying storage now keeps a bounded sequence of structural patches instead of full snapshot copies. This reduces memory usage and makes undo/redo operations scale for large documents while preserving deterministic replay semantics.
+`LayoutHistory` verfolgt Mutationen des Layout-Editors über differenzbasierte Patches. Die öffentliche API (`push`, `undo`, `redo`, `reset`, `canUndo`, `canRedo`) bleibt kompatibel, während intern keine vollständigen Snapshots mehr gespeichert werden.
 
 ## Patch-based Storage
 
-Each history entry captures a forward patch (`redo`) and its inverse (`undo`):
+Jeder History-Eintrag enthält ein Vorwärts- (`redo`) und ein Rückwärts-Patch (`undo`):
 
-* **Canvas changes** – updated width, height, and selected element id values are recorded when they differ from the previous snapshot.
-* **Element mutations** – additions, removals, and updates only carry the affected `LayoutElement` payloads or ids. Arrays such as `attributes`, `children`, and `viewState` are deep-cloned for stability.
-* **Ordering** – when the ordering of element ids changes (because of insertions, deletions, or explicit reordering), the target order is captured as a list of ids. The inverse order is stored for undo.
+- **Canvas** – `canvasWidth`, `canvasHeight` und `selectedElementId` werden nur gespeichert, wenn sie sich ändern. Drag-spezifische Zustände gehören nicht in die History.
+- **Elemente** – Hinzufügungen, Entfernungen und Updates tragen ausschließlich betroffene `LayoutElement`-Kopien oder IDs. `cloneLayoutElement` stellt Tiefenkopien inklusive `layout`, `children`, `viewState` sicher.
+- **Reihenfolge** – Änderungen an der Elementsequenz (z. B. Reparenting, Reorder) sichern die Ziel-ID-Liste sowie die inverse Reihenfolge.
 
-Applying a patch reconstructs a new snapshot by replaying the minimal operations against the prior state. Undo operations simply apply the inverse patch. Because both directions are materialized, the existing `restore` callback still receives a full snapshot clone and no caller adjustments are required.
+Das Anwenden eines Patches baut den nächsten Snapshot durch gezielte Operationen auf dem vorherigen Zustand auf. Undo nutzt den inverse Patch. Da beide Richtungen materialisiert sind, erhalten Konsumenten weiterhin vollständige Snapshot-Klone.
+
+## Lifecycle & Reset
+
+- Der Konstruktor erwartet zwei Callbacks: `capture` (liefert aktuelle Snapshots) und `restore` (setzt einen Snapshot zurück in den Store).
+- `push(snapshot?)` akzeptiert optional einen extern geklonten Snapshot; andernfalls wird der aktuelle Stand via Callback erfasst. Identische Snapshots erzeugen keinen Eintrag.
+- `reset(initial?)` setzt die History zurück und verwendet einen geklonten Baseline-Snapshot als Ausgangspunkt.
+- `isRestoring` kennzeichnet Undo/Redo-Replays, sodass aufrufende Stores (`LayoutEditorStore.commitHistory()`) keine neuen Einträge während eines Replays erzeugen.
 
 ## Bounded History Window
 
-The history retains the most recent 50 transitions. When a new patch would exceed that limit, the oldest entry is pruned and its forward patch is folded into the baseline snapshot that seeds the remaining entries. The cursor (the number of applied patches) is shifted accordingly so the visible state remains stable. This strategy maintains redo correctness: even after pruning, redo continues to operate over the preserved window without dangling references.
+`LayoutHistory` hält maximal 50 Einträge. Bei Überlauf wird der älteste Eintrag entfernt und sein Vorwärtspatch in die Baseline eingearbeitet. Der Cursor reduziert sich entsprechend, sodass Undo/Redo weiterhin innerhalb des verbleibenden Fensters funktionieren.
 
 ## Replay Guarantees
 
-Undo and redo both operate against the current snapshot rather than re-capturing state. `LayoutHistory` guards against re-entrant restores with the `isRestoring` flag and refuses to record pushes triggered during a replay. The accompanying tests (`tests/history-limits.test.ts`) exercise:
-
-1. Enforcement of the 50-step cap while preserving redo of the surviving entries.
-2. Accurate replay of complex element operations (create, reorder, update, delete, and canvas changes).
-
-The diff-first approach keeps history storage proportional to the number of modifications instead of the size of the entire layout, while keeping the observable behaviour identical for consumers of the store.
+- `undo()` und `redo()` arbeiten stets auf dem aktuell gespeicherten Snapshot (`currentSnapshot`).
+- Beim Wiederherstellen ruft `restoreSnapshot()` den übergebenen Callback mit einem weiteren Klon auf, um externe Mutationen zu vermeiden.
+- Tests in `tests/history-limits.test.ts` sichern Limit- und Replay-Verhalten ab; Instrumentation-Tests überwachen Telemetrie während History-Flows.
 
 ## Navigation
 
 - [Documentation index](./README.md)
-- Related: [Data model overview](./data-model-overview.md)
+- [Data Model Overview](./data-model-overview.md)
+- [State Layer](../src/state/README.md)
 
 ## Offene Aufgaben
 
