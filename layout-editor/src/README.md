@@ -30,7 +30,7 @@ Der `src/`-Ordner enthält den TypeScript-Quellcode des Layout Editors. Er ist n
 
 - [`state/`](state) – Kapselt den zentralen Store.
   - [`layout-editor-store.ts`](state/layout-editor-store.ts) – Verwaltet Canvas, Elemente, Auswahl, Drag- und History-State und emittiert Änderungsereignisse.
-  - [`interaction-telemetry.ts`](state/interaction-telemetry.ts) – Stellt Observer- und Logger-Hooks für Stage-Interaktionen bereit; Details in [`../docs/stage-instrumentation.md`](../docs/stage-instrumentation.md).
+  - [`interaction-telemetry.ts`](state/interaction-telemetry.ts) – Stellt Observer- und Logger-Hooks für Stage-Interaktionen bereit; Details in [`../../docs/stage-instrumentation.md`](../../docs/stage-instrumentation.md).
 
 Weiterführende Details zum Datenmodell und zur Store-Architektur findest du in [`../docs/data-model-overview.md`](../docs/data-model-overview.md) und [`../docs/history-design.md`](../docs/history-design.md).
 

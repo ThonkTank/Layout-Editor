@@ -7,7 +7,7 @@ Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Can
 - [`diff-renderer.ts`](diff-renderer.ts) – Leichtgewichtiger Renderer, der auf Key-basierten Diffs DOM-Bäume patcht.
 - [`editor-shell.ts`](editor-shell.ts) – Umschließender Rahmen für Toolbar, Stage und Inspector.
 - [`primitives.ts`](primitives.ts) – Hilfsfunktionen zum Erzeugen wiederkehrender DOM-Bausteine (Buttons, Panels, Placeholder).
-- [`stage.ts`](stage.ts) – Canvas- und Kamera-Verwaltung inklusive Pointer-Interaktionen und Element-Synchronisation; Kamera-Hooks siehe [Stage-Instrumentierung › Kamera-Telemetrie](../../../docs/stage-instrumentation.md#kamera-telemetrie).
+- [`stage.ts`](stage.ts) – Canvas- und Kamera-Verwaltung inklusive Pointer-Interaktionen und Element-Synchronisation; Kamera-Hooks siehe [Stage-Instrumentierung › Kamera-Telemetrie](../../../../docs/stage-instrumentation.md#kamera-telemetrie).
 - [`status-banner.ts`](status-banner.ts) – Anzeige für Speichervorgänge, Fehlermeldungen und Rate-Limits.
 - [`structure-tree.ts`](structure-tree.ts) – Visualisiert die Layout-Hierarchie und hält Selektion & Fokus synchron.
 

@@ -5,7 +5,7 @@ The state layer coordinates mutable editor state, history, and event emission. I
 ## Files
 
 - `layout-editor-store.ts` – Central store that orchestrates element CRUD, canvas sizing, selection, drag state, export payload caching, and undo/redo integration via `LayoutHistory`.
-- `interaction-telemetry.ts` – Consolidated observer/logger hub for stage interactions; exposes setters for runtime probes and the event union defined in the [stage instrumentation guide](../../docs/stage-instrumentation.md).
+- `interaction-telemetry.ts` – Consolidated observer/logger hub for stage interactions; exposes setters for runtime probes and the event union defined in the [stage instrumentation guide](../../../docs/stage-instrumentation.md).
 
 ## Conventions & Extension Points
 
@@ -15,7 +15,7 @@ The state layer coordinates mutable editor state, history, and event emission. I
 - When expanding the public state shape, update the exported `LayoutEditorState` type and adjust serialization/restore logic. Use immutable snapshots for outward-facing state to keep observers deterministic.
 - Structural behaviour (parenting, child order, validation) is implemented in the [`model`](../model/README.md) layer. Prefer to add tree capabilities there and call them from the store.
 - For a data contract overview, refer to the [data model documentation](../../docs/data-model-overview.md). Keep store exports aligned with the documented schema so persistence and tests continue to pass.
-- Stage telemetry must be instrumented through `stageInteractionTelemetry`. Extend the `StageInteractionEvent` union and observer/logger interfaces together, keep payloads JSON-serialisable, update [`layout-editor-store.instrumentation.test.ts`](../../tests/layout-editor-store.instrumentation.test.ts), and document the new events in the [stage instrumentation guide](../../docs/stage-instrumentation.md). Always reset hooks via `resetStageInteractionTelemetry()` in tests to avoid leaks.
+- Stage telemetry must be instrumented through `stageInteractionTelemetry`. Extend the `StageInteractionEvent` union and observer/logger interfaces together, keep payloads JSON-serialisable, update [`layout-editor-store.instrumentation.test.ts`](../../tests/layout-editor-store.instrumentation.test.ts), and document the new events in the [stage instrumentation guide](../../../docs/stage-instrumentation.md). Always reset hooks via `resetStageInteractionTelemetry()` in tests to avoid leaks.
 
 ## To-Do
 
