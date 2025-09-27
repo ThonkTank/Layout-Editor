@@ -8,6 +8,14 @@ Die Layout-Bibliothek kapselt das Speichern und Laden von Layout-Dateien im Obsi
 - **Legacy-Pfade:** Beim Lesen werden zusätzlich ältere Verzeichnisnamen wie `Layout Editor/Layouts` durchsucht. Dateien aus Legacy-Pfaden werden erkannt, ohne dass sie sofort migriert werden müssen.【F:layout-editor/src/layout-library.ts†L28-L157】
 - **Dateisuche:** Beim Auflisten oder Laden prüft die Bibliothek alle bekannten Ordner, filtert JSON-Dateien und ignoriert doppelte Basenamen, damit eine Layout-ID nur einmal auftaucht.【F:layout-editor/src/layout-library.ts†L133-L158】
 
+## Dokumentationsinventar
+
+| Thema | Technische Quelle | Tests & Soll-Referenzen |
+| --- | --- | --- |
+| Layout speichern & laden | [`src/layout-library.ts`](../src/layout-library.ts) | [`../tests/persistence-errors.test.ts`](../tests/persistence-errors.test.ts), [User-Wiki › Fehlerdiagnose](../../docs/README.md#fehlerdiagnose--qualit%C3%A4tschecks) |
+| Schema-Migrationen | [`runLayoutSchemaMigrations`](../src/layout-library.ts) | [`../tests/api-versioning.test.ts`](../tests/api-versioning.test.ts) |
+| Header-Integration | [`src/presenters/header-controls.ts`](../src/presenters/header-controls.ts) | [UI-Performance › Header controls feedback](./ui-performance.md#header-controls-feedback) |
+
 ## Dateinamen, IDs und Namensgebung
 
 - **Dateinamen:** Jede Layout-Datei trägt die Form `<id>.json`. Die ID ist damit der primäre Schlüssel im Vault.【F:layout-editor/src/layout-library.ts†L160-L200】
@@ -54,7 +62,7 @@ Bei Erfolg werden Metadaten wie `createdAt`, `updatedAt` und `schemaVersion` ges
 
 ### `saveLayoutToLibrary`
 
-- **Banner & Notices:** Fehler propagieren bis zur Kopfzeile des Editors. `describeLayoutPersistenceError` ordnet bekannte Meldungen den UI-Codes `layout/...` zu, ergänzt Hilfetexte und zeigt sie sowohl im Persistenz-Banner als auch in einem Obsidian-Notice an.【F:layout-editor/src/presenters/header-controls.ts†L40-L145】【F:layout-editor/src/presenters/header-controls.ts†L400-L426】
+- **Banner & Notices:** Fehler propagieren bis zur Kopfzeile des Editors. `describeLayoutPersistenceError` ordnet bekannte Meldungen den UI-Codes `layout/...` zu, ergänzt Hilfetexte und zeigt sie sowohl im Persistenz-Banner als auch in einem Obsidian-Notice an.【F:layout-editor/src/presenters/header-controls.ts†L40-L145】【F:layout-editor/src/presenters/header-controls.ts†L400-L426】 Abgedeckt durch [`../tests/persistence-errors.test.ts`](../tests/persistence-errors.test.ts).
 - **Banner-Lifecycle:** `showPersistenceError` initialisiert bei Bedarf den `StatusBannerComponent` und aktualisiert seinen Zustand, bis ein erfolgreicher Speichervorgang `clearPersistenceError` aufruft.【F:layout-editor/src/presenters/header-controls.ts†L446-L461】
 
 ### `runLayoutSchemaMigrations`
@@ -70,5 +78,5 @@ Bei Erfolg werden Metadaten wie `createdAt`, `updatedAt` und `schemaVersion` ges
 
 ## Offene Aufgaben
 
-- Workflow-Dokumentation zwischen Bibliothek und UI prüfen: [`documentation-audit-ui-experience.md`](../todo/documentation-audit-ui-experience.md).
 - Sequenzdiagramme & Accessibility-Kriterien nachziehen: [`ui-accessibility-and-diagrams.md`](../todo/ui-accessibility-and-diagrams.md).
+- Shortcut-Testabdeckung ergänzen (Header-Shortcuts spiegeln Bibliotheksstatus): [`ui-shortcut-coverage.md`](../todo/ui-shortcut-coverage.md).

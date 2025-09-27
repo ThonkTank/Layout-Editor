@@ -12,6 +12,15 @@ presenters/
 └── structure-panel.ts     – StructurePanelPresenter für Tree-Auswahl & Drag/Drop
 ```
 
+## Dokumentationsinventar
+
+| Thema | Technische Quelle | Soll-Referenz (User-Wiki) |
+| --- | --- | --- |
+| Fokus- & Kamera-Kopplung | [`stage-controller.ts`](./stage-controller.ts) | [Stage-Instrumentierung › Kamera-Telemetrie](../../../docs/stage-instrumentation.md#kamera-telemetrie) |
+| Strukturbaum-Delegation | [`structure-panel.ts`](./structure-panel.ts) | [UI-Komponenten › Strukturbaum](../../../docs/ui-components/structure-tree.md#prim%C3%A4re-interaktionen) |
+| Persistenz-Feedback | [`header-controls.ts`](./header-controls.ts) | [User-Wiki › Fehlerdiagnose & Qualitätschecks](../../../docs/README.md#fehlerdiagnose--qualit%C3%A4tschecks) |
+| Shortcuts & Keyboard-Brücke | [`stage-controller.ts`](./stage-controller.ts), [`../ui/components/stage.ts`](../ui/components/stage.ts) | [UI-Komponenten › Keyboard-Shortcuts](../../../docs/ui-components.md#keyboard-shortcuts) |
+
 ## Terminologie & Rollen
 
 - **StageController** – Verbindet Canvas, Kamera-Telemetrie und Store-Snapshots.
@@ -45,6 +54,32 @@ presenters/
 2. Fehler werden über `describeLayoutPersistenceError()` normalisiert und via `showPersistenceError()` sowohl an `StatusBannerComponent` als auch `showNotice()` weitergegeben.
 3. `clearPersistenceError()` entfernt Banner/Notice, sobald ein erfolgreicher Speichervorgang gemeldet wird.
 4. Anwenderleitfaden siehe [User-Wiki › Fehlerdiagnose & Qualitätschecks](../../../docs/README.md#fehlerdiagnose--qualit%C3%A4tschecks).
+
+### Shortcuts Tree ⇄ Stage
+
+```mermaid
+sequenceDiagram
+    participant User as Nutzer:in
+    participant Tree as StructureTreeComponent
+    participant Presenter as StructurePanelPresenter
+    participant StageCtrl as StageController
+    participant Stage as StageComponent
+    participant Store as LayoutEditorStore
+    User->>Tree: ArrowDown (Tree-Navigation)
+    Tree->>Presenter: onSelectElement(nextId)
+    Presenter->>Store: selectElement(nextId)
+    Presenter->>StageCtrl: focusElement(nextId)
+    StageCtrl->>Stage: focusElement(nextId)
+    Stage->>StageCtrl: StageCameraObserver(reason="focus")
+    StageCtrl->>Presenter: notifyFocus(reason)
+    Stage->>User: Auswahl & Kamera aktualisiert
+    User->>Stage: Shift+Arrow (Resize-Shortcut)
+    Stage->>Store: runInteraction(resize)
+    Store-->>Stage: Snapshot & clampEvents
+    Store-->>Presenter: state (selectedElementId)
+```
+
+Die Shortcut-Kette folgt den Vorgaben aus dem User-Wiki ([UI-Komponenten › Keyboard-Shortcuts](../../../docs/ui-components.md#keyboard-shortcuts)). Aktuell decken [`../../tests/stage-camera.test.ts`](../../tests/stage-camera.test.ts) Fokus-Telemetrie, nicht aber die Tastenevents selbst ab; siehe To-Do [`ui-shortcut-coverage.md`](../../todo/ui-shortcut-coverage.md).
 
 ## StageController (`stage-controller.ts`)
 
@@ -93,5 +128,5 @@ Der Header-Presenter bündelt Element-Picker, Canvas-Größeneingaben, Exportans
 
 ## Offene Punkte
 
-- Dokumentationslücken und Workflow-Abgleich siehe [`documentation-audit-ui-experience.md`](../../todo/documentation-audit-ui-experience.md).
 - Sequenzdiagramme & Accessibility-Kriterien ergänzen: [`ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md).
+- Shortcut-Testabdeckung ergänzen: [`ui-shortcut-coverage.md`](../../todo/ui-shortcut-coverage.md).
