@@ -7,7 +7,16 @@ Methoden. Die Signaturen basieren auf `src/main.ts`.
 ## Navigation
 
 - [Dokumentenindex](./README.md)
+- User-Wiki: [`docs/README.md`](../../docs/README.md#verwandte-deep-dives-in-layout-editordocs)
 - Verwandt: [View-Registry](./view-registry.md)
+
+## Setup-Workflow für Integratoren
+
+1. **Plugin laden:** `const plugin = app.plugins.getPlugin("layout-editor");` prüfen und per User-Wiki-Anleitung aktivieren, falls `undefined`.
+2. **API beziehen:** `const api = plugin?.getApi();` ruft die hier dokumentierten Methoden ab. Bei `undefined` sicherstellen, dass das Layout-Editor-Plugin fertig initialisiert ist (`await plugin.loadPromise`).
+3. **Version absichern:** Vor Feature-Aufrufen `api.assertApiVersion("1.0.0", "<feature>");` oder `api.withMinimumApiVersion` nutzen.
+4. **Tooling vorbereiten:** Vor Commits `npm install` im Ordner `layout-editor/` ausführen und die in [Tooling](./tooling.md) dokumentierten Checks laufen lassen, damit CI-Äquivalenz erreicht wird.
+5. **Workflows nachvollziehen:** Für Nutzerflüsse auf das User-Wiki unter [`docs/`](../../docs/README.md) verweisen und technische Tiefenlinks aus diesem Dokument verwenden.
 
 ## Versionierung & Kompatibilität
 
@@ -20,6 +29,12 @@ Methoden. Die Signaturen basieren auf `src/main.ts`.
 
 > **Hinweis:** Versionen werden tolerant geparst (Nicht-Ziffern werden entfernt). Verwende trotzdem reguläre SemVer-Strings wie
 > `"1.0.0"` oder `"1.2.3"`, um unerwartete Normalisierungen zu vermeiden.
+
+**Strategische Leitplanken:**
+
+- Folge dem SemVer-Prozess aus [`docs/api-migrations.md`](../../docs/api-migrations.md) bei Breaking Changes und dokumentiere neue Minimalversionen direkt in Pull Requests.
+- Verwende `isApiVersionAtLeast` oder `assertApiVersion` als Guard – reine Stringvergleiche auf `apiVersion` sind fehleranfällig bei zweistelligen Minor-/Patch-Versionen.
+- Teste neue Registry-Features in Feature-Branches und halte die CI-Kette (`npm run lint`, `npm run format`, `npm test`) grün; Abweichungen samt Migrationshinweisen im User-Wiki dokumentieren.
 
 ## View-Integration
 
@@ -77,6 +92,14 @@ Die Layout-Bibliothek verwaltet Layout-Dateien im Vault.
 
 > **Migrationen:** Die Rückgabewerte enthalten `schemaVersion`. Falls `loadLayout` `null` liefert, sollte das aufrufende Plugin eine Nutzerwarnung ausgeben (z. B. „Layout-Version nicht unterstützt“).
 
+## Diagnose & Fehlerbehebung
+
+- **Persistenz- und Schemafehler:** Ergänzende Matrix in [`docs/persistence-errors.md`](./persistence-errors.md) sowie Benutzerwarnungen im User-Wiki unter [`persistence-diagnostics`](../../docs/persistence-diagnostics.md).
+- **Registry-Konflikte:** Protokolliere `api.getViewBindingIds()` bzw. `api.getElementDefinitions()`; sie liefern Snapshots für Debugging.
+- **Tool-gestützte Analyse:** Nutze `npm run lint`, `npm test` und `npm run format` (siehe [Tooling](./tooling.md)) im Fehlerfall frühzeitig, um Regressionsursachen einzugrenzen.
+- **Stage-/CI-Checks:** Deploy- und Preview-Stage-Anforderungen sind in [`docs/stage-instrumentation.md`](../../docs/stage-instrumentation.md) dokumentiert.
+- **Noch offene Onboarding-Lücke:** Die verifizierten Node.js- und Obsidian-Versionen für Integrationen sind nicht festgehalten – siehe [`onboarding-runtime-compatibility.md`](../todo/onboarding-runtime-compatibility.md).
+
 ## View-Bindings registrieren
 
 View-Bindings koppeln externe Render-Views an den Layout-Editor. Weitere Hintergründe enthält [`docs/view-registry.md`](./view-registry.md).
@@ -109,13 +132,18 @@ View-Bindings koppeln externe Render-Views an den Layout-Editor. Weitere Hinterg
 - **Defaults wiederherstellen:** `resetElementDefinitions()` ohne Argument lädt die Standarddefinitionen; `resetViewBindings()` ohne Argument leert die Registry.
 - **Aufräumen:** Plugins sollten Listener und registrierte Definitionen/Bindings beim eigenen `onunload` entfernen, um Seiteneffekte bei Reloads zu vermeiden.
 
-## Weiterführende Ressourcen
+## Tooling & CI-Anforderungen
 
-- [`docs/view-registry.md`](./view-registry.md) – Detaillierte Informationen zur View-Registry inklusive Fehlermeldungen.
-- [`docs/persistence-errors.md`](./persistence-errors.md) – Hintergrund zu Persistenz- und Migrationfehlern, die bei `saveLayout` oder `loadLayout` auftreten können.
-- [`docs/tooling.md`](./tooling.md) – Hinweise zu Tests und Bundling rund um die API.
+- **Qualitätssicherung:** `npm run lint`, `npm run format`, `npm test` müssen vor Merge-Anträgen erfolgreich sein; sie spiegeln die CI-Pipeline.
+- **Build-Prüfung:** `npm run build` erzeugt die Bundle-Artefakte, die auch in Release-Pipelines genutzt werden.
+- **Manifest-Validierung:** `node scripts/generate-component-manifest.mjs` wird automatisch über `npm run build` ausgeführt und sollte lokal überprüft werden, wenn neue Elemente oder Views registriert werden.
+- **Weitere Ressourcen:**
+  - [`docs/view-registry.md`](./view-registry.md) – Detaillierte Informationen zur View-Registry inklusive Fehlermeldungen.
+  - [`docs/persistence-errors.md`](./persistence-errors.md) – Hintergrund zu Persistenz- und Migrationfehlern.
+  - [`docs/tooling.md`](./tooling.md) – Übersicht aller unterstützten Befehle samt Setup-Schritten.
 
 
 ## Offene Aufgaben
 
 - Integrationsleitfäden und Versionierung prüfen: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).
+- Runtime-Voraussetzungen für Integratoren klären: [`onboarding-runtime-compatibility.md`](../todo/onboarding-runtime-compatibility.md).
