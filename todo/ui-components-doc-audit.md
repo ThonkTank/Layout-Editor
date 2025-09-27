@@ -1,3 +1,14 @@
+---
+status: open
+priority: medium
+area:
+  - documentation
+owner: unassigned
+tags:
+  - ui-components
+  - diff-renderer
+---
+
 # UI-Komponenten Doku-Audit
 
 ## Originalkritik

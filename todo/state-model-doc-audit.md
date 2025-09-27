@@ -1,3 +1,14 @@
+---
+status: open
+priority: high
+area:
+  - documentation
+owner: unassigned
+tags:
+  - state-model
+  - telemetry
+---
+
 # State/model documentation audit
 
 ## Originalkritik

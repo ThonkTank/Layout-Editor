@@ -1,3 +1,15 @@
+---
+status: open
+priority: high
+area:
+  - documentation
+  - api
+owner: unassigned
+tags:
+  - plugin-shell
+  - view-registry
+---
+
 # Plugin-Shell-Dokumentationsaudit
 
 ## Originalkritik

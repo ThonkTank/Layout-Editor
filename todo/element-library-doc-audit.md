@@ -1,3 +1,14 @@
+---
+status: open
+priority: medium
+area:
+  - documentation
+owner: unassigned
+tags:
+  - element-library
+  - preview-hooks
+---
+
 # Element-Bibliothek: Dokumentationsaudit
 
 ## Originalkritik

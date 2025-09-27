@@ -1,3 +1,14 @@
+---
+status: open
+priority: medium
+area:
+  - documentation
+owner: unassigned
+tags:
+  - tooling
+  - tests
+---
+
 # Tooling-Dokumentationsabgleich
 
 ## Originalkritik
