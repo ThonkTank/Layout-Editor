@@ -1,3 +1,15 @@
+---
+status: open
+priority: high
+area:
+  - documentation
+  - runtime
+owner: unassigned
+tags:
+  - domain-configuration
+  - seed-layouts
+---
+
 # Persistenz-, Konfigurations- & i18n-Doku Audit
 
 ## Originalkritik

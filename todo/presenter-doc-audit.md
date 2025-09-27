@@ -1,3 +1,14 @@
+---
+status: open
+priority: medium
+area:
+  - documentation
+owner: unassigned
+tags:
+  - presenters
+  - telemetry
+---
+
 # Presenter-Dokumentations-Audit
 
 ## Originalkritik
