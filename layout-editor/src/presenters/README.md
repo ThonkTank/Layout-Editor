@@ -14,3 +14,7 @@ This folder contains presenter classes that bridge application state to reusable
 - Subscribe to the store with `store.subscribe` and cache the unsubscribe handler. Always emit initial state to components so they can render before the first event tick.
 - Encapsulate cross-component communication (e.g. stage focus on selection) inside presenters; avoid directly coupling UI components.
 - To add a new presenter, expose a class/function that accepts its dependencies (host element, store, collaborators) as constructor parameters and returns a disposer. Place tests or usage documentation in the component or higher-level feature docs; link to deep-dive UI notes in [`../../docs/ui-performance.md`](../../docs/ui-performance.md) or the [view registry guide](../../docs/view-registry.md) where relevant.
+
+---
+
+> **To-Do:** Details zu Kamera-Fokus, Drag/Drop und Fehlerpfaden werden im [Presenter-Dokumentations-Audit](../../../todo/presenter-doc-audit.md) nachgezogen.
