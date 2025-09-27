@@ -17,6 +17,15 @@ Die Dateien in diesem Ordner instanziieren konkrete `LayoutElementComponent`-Obj
 | [`label.ts`](./label.ts) | `label` | Eigene Implementierung | Überschrift mit Inline-Editing und Auto-Scaling. Nutzt [`../../inline-edit.ts`](../../inline-edit.ts) und interagiert mit dem Preview-Fluss aus [`../base.ts`](../base.ts). |
 | [`separator.ts`](./separator.ts) | `separator` | Eigene Implementierung | Trennt Layoutbereiche. Rendert optional einen Titel (Inspector `renderLabelField`) und eine Divider-Linie in der Preview. |
 
+## Preview-Lifecycle
+
+1. **Context-Aufbau:** `renderPreview` erhält einen [`ElementPreviewContext`](../base.ts), der `preview`, `elements`, `finalize`, `registerPreviewCleanup`, `ensureContainerDefaults` und `applyContainerLayout` kapselt. Vor jeder DOM-Manipulation müssen Default-Werte gesetzt werden (z. B. via `ensureDefaults` oder `ensureContainerDefaults`).
+2. **DOM & Interaktion:** UI-Knoten entstehen innerhalb von `preview`. Interaktionen müssen bei Statusänderungen `finalize(element)` aufrufen, damit Undo/Redo und Autosave korrekt arbeiten. Beispiel: [`text-input.ts`](./text-input.ts) registriert `blur`-Handler, [`dropdown.ts`](./dropdown.ts) reagiert auf `change`.
+3. **Cleanup registrieren:** Langlaufende Listener, Timer oder Observer sind über `registerPreviewCleanup` zu entsorgen. Der [`view-container`](./view-container.ts) zeigt dies exemplarisch: ResizeObserver und `requestAnimationFrame` werden eingerichtet und im Cleanup wieder entfernt, damit Stage-Wechsel keinen Memory-Leak erzeugen.
+4. **Container-Spezifika:** Container-Ableitungen rufen zunächst [`renderContainerPreview`](../shared/container-preview.ts) auf und können danach `applyContainerLayout` nutzen, um das Layout mit Stage-Presenter-Semantik zu synchronisieren.
+
+> **Tipp:** Komplexe Previews wie [`view-container.ts`](./view-container.ts) sollten ihre Pointer-Events durch `stopPropagation()` entkoppeln, sobald sie Stage-Interaktionen überschreiben, und dennoch `finalize`/`pushHistory` nutzen, wenn Editor-Zustände verändert werden.
+
 ## Neue Komponenten hinzufügen
 
 1. **Basisklasse wählen:** Prüfe die [Shared-Bibliothek](../shared/README.md), ob `ContainerComponent`, `FieldComponent`, `TextFieldComponent` oder `SelectComponent` passt. Andernfalls `ElementComponentBase` direkt erweitern.
