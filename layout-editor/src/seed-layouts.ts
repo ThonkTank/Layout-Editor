@@ -147,7 +147,19 @@ async function ensureSeedLayout(app: App, layout: DomainSeedLayout, context: See
     }
 }
 
-export async function ensureSeedLayouts(app: App): Promise<void> {
+// Serialise seed synchronisation runs so toggle storms do not launch overlapping writes.
+let ensureQueue: Promise<void> = Promise.resolve();
+
+export function ensureSeedLayouts(app: App): Promise<void> {
+    const run = ensureQueue.then(() => performEnsureSeedLayouts(app));
+    ensureQueue = run.catch(error => {
+        ensureQueue = Promise.resolve();
+        throw error;
+    });
+    return run;
+}
+
+async function performEnsureSeedLayouts(app: App): Promise<void> {
     let configuration = domainConfigurationService.getCurrent();
     try {
         configuration = await domainConfigurationService.ensure(app);

@@ -4,8 +4,6 @@ Die Layout-Definitionen des Plugins lassen sich jetzt entweder aus den eingebaut
 oder aus einer JSON-Datei im Vault laden. Diese Seite beschreibt Aufbau, Ablageort und
 Validierungsregeln der Konfiguration sowie die notwendigen Schritte zur Aktivierung.
 
-> **To-Do:** [Audit der Persistenz-, Konfigurations- & i18n-Dokumentation](../../todo/persistence-config-i18n-doc-audit.md)
-
 ## Quellen auswählen
 
 1. Öffne die **Einstellungen** von Obsidian und navigiere zu **Community Plugins → Layout Editor**.
@@ -14,7 +12,8 @@ Validierungsregeln der Konfiguration sowie die notwendigen Schritte zur Aktivier
    - **Builtin** lädt die mit dem Plugin ausgelieferten Attributgruppen, Element-Definitionen und Seed-Layouts.
    - **Vault** lädt alle Bereiche aus deiner Vault-Datei `Layout Editor/domain-config.json` (siehe unten).
 4. Beim Umschalten wird die Domänenkonfiguration automatisch neu geladen und sowohl die Element-Definitionen
-   als auch die Seed-Layouts aktualisiert.
+   als auch die Seed-Layouts aktualisiert. Der Seed-Sync läuft unmittelbar erneut, ergänzt fehlende Layouts
+   und protokolliert Konflikte (z. B. doppelte Dateien) ohne bestehende Seeds zu überschreiben.
 
 Die Auswahl wird über `localStorage` pro Client gesichert, sodass der zuletzt verwendete Modus beim nächsten Start wiederhergestellt wird.
 
@@ -104,7 +103,10 @@ möglich sind.
 Beim Plugin-Start ruft `ensureSeedLayouts` die aktuell aktive Konfiguration ab und legt für
 jedes definierte Seed-Layout einen Eintrag in der Layout-Bibliothek an. Existierende Einträge
 werden nicht überschrieben. Scheitert das Laden der Vault-Konfiguration, wird automatisch auf
-die eingebauten Seeds zurückgegriffen. Details zur Struktur der Bibliothek findest du in
+die eingebauten Seeds zurückgegriffen. Jeder Wechsel der Domänenquelle löst denselben
+Synchronisationslauf erneut aus. Die Routine ist idempotent: Bereits vorhandene Layout-Dateien
+bleiben unangetastet, fehlende Seeds werden ergänzt und erkannte Konflikte werden im Log
+hervorgehoben. Details zur Struktur der Bibliothek findest du in
 [`layout-library.md`](./layout-library.md).
 
 ## Entwicklungsnotizen
