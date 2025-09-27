@@ -24,3 +24,7 @@ Dieses Verzeichnis bündelt alle Layout-Editor-Komponenten, die als **Elements**
 - [Element Preview API](../element-preview.ts) – definiert, wie Previews im Editor gerendert werden.
 - [View Registry](../view-registry.ts) – stellt Feature-Bindings bereit, die z. B. vom `view-container` genutzt werden.
 - [UI-Komponenten](../ui/components) – Basisbausteine für Palette, Inspector und Modals.
+
+---
+
+Weitere Kritikpunkte siehe [To-Do „Element-Dokumentation auditieren“](../../../todo/element-library-doc-audit.md).

@@ -22,3 +22,7 @@ Die Dateien in diesem Ordner instanziieren konkrete `LayoutElementComponent`-Obj
 1. **Basisklasse wählen:** Prüfe die [Shared-Bibliothek](../shared/README.md), ob `ContainerComponent`, `FieldComponent`, `TextFieldComponent` oder `SelectComponent` passt. Andernfalls `ElementComponentBase` direkt erweitern.
 2. **Implementierung erstellen:** Leg die Datei hier ab und implementiere `renderPreview` und optional `renderInspector`/`ensureDefaults`.
 3. **Build laufen lassen:** Der Build aktualisiert [`component-manifest.ts`](../component-manifest.ts); anschließend steht die Komponente automatisch über [`registry.ts`](../registry.ts) und die Presenter (`stage-controller`, `structure-panel`) bereit.
+
+---
+
+Weitere Kritikpunkte siehe [To-Do „Element-Dokumentation auditieren“](../../../../todo/element-library-doc-audit.md).
