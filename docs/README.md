@@ -7,6 +7,7 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - [`api-migrations.md`](api-migrations.md) – Leitfaden für API-Änderungen, Layout-Schema-Migrationen sowie Qualitätschecks rund um Versionssprünge.
 - [`persistence-diagnostics.md`](persistence-diagnostics.md) – Monitoring-Checks und Leitplanken für Speicherintegrität im Clusterbetrieb.
 - [`stage-instrumentation.md`](stage-instrumentation.md) – Messpunkte, KPIs und Alarmierungs-Setup für Deploy- und Preview-Stages.
+- [`ui-components.md`](ui-components.md) – Soll-Referenz aller sichtbaren UI-Komponenten (Stage, Strukturbaum, Inspector, Banner, Menüs) inklusive Interaktionsmuster und bekannten Lücken.
 
 ## Setup-Workflows
 
@@ -26,6 +27,12 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - Schnellstart für Fehlersuche in der Layout-Persistenz liefert [`persistence-diagnostics.md`](persistence-diagnostics.md); technische Details befinden sich in [`layout-editor/docs/persistence-errors.md`](../layout-editor/docs/persistence-errors.md).
 - Für View-Probleme Verweise auf [`layout-editor/docs/view-registry.md#diagnose--fehlerbehebung`](../layout-editor/docs/view-registry.md#diagnose--fehlerbehebung) verwenden.
 - Stage- und CI-Anforderungen sind in [`stage-instrumentation.md`](stage-instrumentation.md) sowie im [Tooling-Guide](../layout-editor/docs/tooling.md#tooling--ci-anforderungen) gebündelt.
+
+## UI-Komponenten im Überblick
+
+- Nutze [`ui-components.md`](ui-components.md) als zentrale Soll-Referenz für Stage, Strukturbaum, Inspector, Banner und Menüs.
+- Detailfragen zu Kamera und Rendering beantwortet [`stage-instrumentation.md`](stage-instrumentation.md) sowie [`../layout-editor/docs/ui-performance.md`](../layout-editor/docs/ui-performance.md).
+- Offene UX- und Accessibility-Aspekte sind als To-Dos verlinkt; das User-Wiki selbst dokumentiert nur den Soll-Zustand.
 
 ## Verwandte Deep-Dives in `layout-editor/docs/`
 
@@ -49,3 +56,7 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 
 - Integrations-Guides gegen Soll-Zustand prüfen: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).
 - Runtime-Voraussetzungen für Entwickler dokumentieren: [`onboarding-runtime-compatibility.md`](../todo/onboarding-runtime-compatibility.md).
+- Accessibility-Standards für UI-Komponenten definieren: [`ui-component-accessibility-spec.md`](../todo/ui-component-accessibility-spec.md).
+- Rollen- und Berechtigungskonzept im Inspector fixieren: [`ui-component-inspector-permissions.md`](../todo/ui-component-inspector-permissions.md).
+- Eskalationspfad für Statusmeldungen beschreiben: [`ui-component-status-ux-gaps.md`](../todo/ui-component-status-ux-gaps.md).
+- Kontextmenü-Inventar vervollständigen: [`ui-component-menu-inventory.md`](../todo/ui-component-menu-inventory.md).
