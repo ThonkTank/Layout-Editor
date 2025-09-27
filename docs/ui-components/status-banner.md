@@ -34,4 +34,4 @@
 
 - Banner verwenden ARIA-Live-Regionen (`role="status"`) zur Ankündigung; Details müssen strukturierte `<dl>`-Elemente bleiben.
 - Eskalationspfade (wann Banner vs. Dialog) und Tastaturfokus gehören zum offenen To-Do [`todo/ui-component-status-ux-gaps.md`](../../todo/ui-component-status-ux-gaps.md).
-- Für Screenreader-Texte existiert ein ergänzender Bedarf in [`todo/ui-component-accessibility-spec.md`](../../todo/ui-component-accessibility-spec.md).
+- Screenreader-Textbausteine richten sich nach der globalen Accessibility-Richtlinie (siehe [`docs/ui-components.md`](../ui-components.md#accessibility-richtlinie-stage-tree-shell)); Banner nutzen weiterhin `role="status"` als Live-Region.

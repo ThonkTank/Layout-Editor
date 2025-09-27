@@ -53,13 +53,13 @@ Dieses Verzeichnis bündelt die nutzerorientierten Ergänzungen zum technischen 
 - Technische Detailentscheidungen findest du weiterhin direkt in den Deep-Dive-Dateien unter `layout-editor/docs/`.
 - Ergänzungen oder neue Artikel sollten hier verlinkt werden, damit Anwender:innen einen konsistenten Einstiegspunkt besitzen.
 - Offene technische Maßnahmen sind im [`../todo/`](../todo/) Verzeichnis dokumentiert und bei den jeweiligen Modulen verlinkt.
+- Accessibility-Leitlinien für Stage, Strukturbaum und Shell stehen in [`ui-components.md`](ui-components.md#accessibility-richtlinie-stage-tree-shell) bereit und ersetzen das frühere To-Do.
 - Für State-, Snapshot- und History-Abläufe dient [`layout-editor-state-history.md`](layout-editor-state-history.md) als verbindliche Soll-Referenz; technische Hintergründe liefern die verlinkten Modul-Guides.
 
 ## Offene Aufgaben
 
 - Integrations-Guides gegen Soll-Zustand prüfen: [`documentation-audit-integration-api.md`](../todo/documentation-audit-integration-api.md).
 - Runtime-Voraussetzungen für Entwickler dokumentieren: [`onboarding-runtime-compatibility.md`](../todo/onboarding-runtime-compatibility.md).
-- Accessibility-Standards für UI-Komponenten definieren: [`ui-component-accessibility-spec.md`](../todo/ui-component-accessibility-spec.md).
 - Rollen- und Berechtigungskonzept im Inspector fixieren: [`ui-component-inspector-permissions.md`](../todo/ui-component-inspector-permissions.md).
 - Eskalationspfad für Statusmeldungen beschreiben: [`ui-component-status-ux-gaps.md`](../todo/ui-component-status-ux-gaps.md).
 - Kontextmenü-Inventar vervollständigen: [`ui-component-menu-inventory.md`](../todo/ui-component-menu-inventory.md).

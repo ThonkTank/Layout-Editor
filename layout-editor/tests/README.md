@@ -33,6 +33,20 @@ In diesem Ordner liegen alle automatisierten Tests für den Layout-Editor. Die D
 - Architektur-Kontext der Module: [`../src/README.md`](../src/README.md)
 - Projektweite Nutzung & Workflows: [`../../README.md`](../../README.md)
 
+## Manuelle Accessibility-Checkliste
+
+Die folgenden Prüfungen sichern die in [`docs/ui-components.md`](../../docs/ui-components.md#accessibility-richtlinie-stage-tree-shell) definierte Tastatur-Guideline ab. Sie sind für jedes Release zu dokumentieren, bis automatisierte UI-Tests existieren.
+
+| Schritt | Erwartung | Statusnotiz |
+| --- | --- | --- |
+| **Fokuspfad** | `Tab`-Reihenfolge: Header → Strukturbaum (erster Eintrag) → Stage-Host → Inspector. Abweichungen vermerken. |
+| **Tree Navigation** | `ArrowUp/Down` bewegen den Fokus innerhalb des Trees. `Enter` oder `Space` übergeben den Fokus an die Stage. |
+| **Stage Keyboard** | Mit aktivem Element bewegen `Arrow`-Tasten das Element, `Shift+Arrow` vergrößert den Schritt. Live-Region kündigt Positionen an. |
+| **Resizer Keyboard** | `ArrowLeft/Right` auf Resizer verändern Panelbreiten und aktualisieren `aria-valuenow`; Grenzen erzeugen eine Ansage. |
+| **Screenreader Text** | Buttons im Tree lesen „Typ – Label – Eltern“ vor, Stage meldet Auswahl/Position, Resizer nennen aktuelle Breiten. |
+
+> 📌 **Dokumentation:** Ergebnisse gehören in das Release-Protokoll oder die QA-Notizen des jeweiligen Sprints. Nicht erfüllte Kriterien sind als Regression zu behandeln.
+
 ## To-Do
 
 - Regressionstest für unveränderliche Store-Snapshots: siehe [`../../todo/store-snapshot-immutability-tests.md`](../../todo/store-snapshot-immutability-tests.md).
