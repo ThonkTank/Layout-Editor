@@ -1,5 +1,14 @@
 import type { LayoutElement } from "../types";
 
+/**
+ * Stage interaction telemetry hub.
+ *
+ * The full event contract and reset conventions live in
+ * `layout-editor/docs/stage-instrumentation.md`. Observers and loggers are
+ * process-wide singletons; always call {@link resetStageInteractionTelemetry}
+ * after tests or temporary instrumentation.
+ */
+
 export type ElementFrameSnapshot = Pick<LayoutElement, "x" | "y" | "width" | "height">;
 
 export interface InteractionStartedEvent {
@@ -31,6 +40,11 @@ export interface ClampStepObservedEvent {
     canvas: { width: number; height: number };
 }
 
+/**
+ * Telemetry events emitted for stage interactions. Each payload must stay
+ * JSON-serialisable; see the stage instrumentation guide for field
+ * semantics and invariants.
+ */
 export type StageInteractionEvent =
     | InteractionStartedEvent
     | InteractionFinishedEvent
@@ -69,6 +83,11 @@ function publish<K extends keyof ObserverEventMap>(method: K, event: ObserverEve
     }
 }
 
+/**
+ * Emits structured stage interaction events to the currently registered
+ * observer and logger. Consumers should prefer these helpers over manually
+ * constructing event objects to keep the `type` discriminator consistent.
+ */
 export const stageInteractionTelemetry = {
     interactionStarted(payload: Omit<InteractionStartedEvent, "type">) {
         const event: InteractionStartedEvent = { type: "interaction:start", ...payload };

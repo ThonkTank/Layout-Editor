@@ -5,7 +5,7 @@ This folder contains presenter classes that bridge application state to reusable
 ## Files
 
 - `header-controls.ts` – Presenter that wires header controls (layout import/export, save/load) to the store, normalises persistence errors, and emits notices for the host Obsidian app.
-- `stage-controller.ts` – Thin controller around `StageComponent` that renders the canvas, ensures container defaults exist before interactions, and keeps the stage in sync with selection and canvas size changes.
+- `stage-controller.ts` – Thin controller around `StageComponent` that renders the canvas, ensures container defaults exist before interactions, keeps the stage in sync with selection and canvas size changes, and proxies camera telemetry to observers as described in the [stage instrumentation guide](../../docs/stage-instrumentation.md#camera-telemetry).
 - `structure-panel.ts` – Presenter for the structure tree sidebar that mirrors the layout hierarchy, forwards drag/drop gestures to the store, and keeps the stage focused on the selected element.
 
 ## Conventions & Extension Points

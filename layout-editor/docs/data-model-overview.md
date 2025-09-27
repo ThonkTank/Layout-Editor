@@ -30,6 +30,9 @@ manually pushing/popping `children` arrays, store methods call the tree service 
 After each mutation the store synchronises its public state via a tree snapshot to ensure
 listeners and history snapshots always reflect the canonical structure.
 
+Instrumentation of these transitions is described in the [stage instrumentation guide](./stage-instrumentation.md), which
+lists the interaction telemetry events and the mandatory payload fields observers can rely on.
+
 ### Snapshot semantics
 
 - `LayoutEditorStore` uses `cloneLayoutElement` to deep-clone every node when capturing

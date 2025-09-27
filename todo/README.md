@@ -8,7 +8,6 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 - `element-library-doc-audit.md` – Dokumentationsaudit zur Element-Bibliothek und ihrem Manifest.
 - `persistence-config-i18n-doc-audit.md` – Abgleich zwischen Domain-Toggle-Dokumentation und Seed-Synchronisation.
 - `presenter-doc-audit.md` – Audit der Presenter-Dokumentation hinsichtlich Telemetrie-, Drag/Drop- und Fehler-Workflows.
-- `state-model-doc-audit.md` – Konsistenzcheck der State-/Telemetry-Dokumentation inklusive fehlendem Stage-Instrumentation-Guide.
 - `tooling-doc-audit.md` – Index- und Strukturabgleich der Tooling- und Testdokumentation.
 
 ## Backlog-Übersicht
@@ -18,7 +17,6 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 | [`element-library-doc-audit.md`](element-library-doc-audit.md) | Dokumentation | Mittel | Manifest- und Preview-Hooks in den Element-Readmes ergänzen. |
 | [`persistence-config-i18n-doc-audit.md`](persistence-config-i18n-doc-audit.md) | Dokumentation&nbsp;/&nbsp;Runtime | Hoch | Seed-Sync-Verhalten beim Domain-Toggle dokumentieren oder implementieren. |
 | [`presenter-doc-audit.md`](presenter-doc-audit.md) | Dokumentation | Mittel | Presenter-Workflows zu Telemetrie, Drag/Drop und Fehlern nachziehen. |
-| [`state-model-doc-audit.md`](state-model-doc-audit.md) | Dokumentation | Hoch | Stage-Instrumentation-Guide neu erstellen und Verweise korrigieren. |
 | [`tooling-doc-audit.md`](tooling-doc-audit.md) | Tooling-Dokumentation | Mittel | Docs-Index und Test-README an den aktuellen Strukturstand anpassen. |
 
 ## Konventionen
