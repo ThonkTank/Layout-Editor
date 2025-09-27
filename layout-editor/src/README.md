@@ -24,7 +24,6 @@ Der `src/`-Ordner enthält den TypeScript-Quellcode des Layout Editors. Er ist n
 - [`search-dropdown.ts`](search-dropdown.ts) – Autocomplete-Helfer für Eingabefelder.
 - [`seed-layouts.ts`](seed-layouts.ts) – Legt Standard-Layouts beim ersten Start an.
 - [`elements/ui.ts`](elements/ui.ts) – UI-Helfer (Buttons, Inputs, Statusanzeigen) für View und Modals.
-- [`To-Do: Plugin-Shell-Dokumentationsaudit`](../../todo/plugin-shell-doc-audit.md) – Tracking der Diskrepanzen zwischen dokumentierter Shell-API und tatsächlichen Exports.
 
 ## Zustandsverwaltung
 

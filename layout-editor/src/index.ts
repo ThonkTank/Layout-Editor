@@ -26,7 +26,10 @@ export {
 } from "./layout-library";
 export {
     getViewBinding,
+    getViewBindingIds,
     getViewBindings,
+    getViewBindingsByTag,
+    hasViewBinding,
     onViewBindingsChanged,
     registerViewBinding,
     resetViewBindings,

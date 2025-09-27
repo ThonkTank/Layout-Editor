@@ -8,7 +8,7 @@ import {
     hasViewBinding,
     registerViewBinding,
     resetViewBindings,
-} from "../src/view-registry";
+} from "../src/index";
 
 async function runTests() {
     resetViewBindings();
