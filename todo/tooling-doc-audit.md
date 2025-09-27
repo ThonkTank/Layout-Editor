@@ -12,8 +12,7 @@ tags:
 # Tooling-Dokumentationsabgleich
 
 ## Originalkritik
-- `docs/README.md` listet nur `api-migrations.md` im Verzeichnis `docs/`, obwohl `persistence-diagnostics.md` und `stage-instrumentation.md` dort ebenfalls liegen.
-- Derselbe Index verlinkt auf `layout-editor/docs/persistence-diagnostics.md`, diese Datei existiert nicht; die Diagnose-Dokumentation befindet sich im Wurzel-`docs/`-Ordner.
+- `docs/README.md` muss alle Dateien im Wurzel-`docs/`-Verzeichnis (z. B. `persistence-diagnostics.md`, `stage-instrumentation.md`) abbilden und korrekt auf sie verlinken.
 - `layout-editor/tests/README.md` erwähnt den Ordner `helpers/` nicht, der als gemeinsames Test-Hilfsverzeichnis geführt wird, wodurch die Strukturübersicht lückenhaft bleibt.
 
 ## Kontext
