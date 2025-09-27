@@ -7,7 +7,8 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 - `README.md` – Index des Backlogs, beschreibt Struktur, Konventionen und Metadaten-Standard.
 - `documentation-audit-state-model.md` – Audit der Dokumentation für State-, Datenmodell- und History-Flows (Status: geschlossen).
 - `ui-components-wiki.md` – Ausbau des UI-Komponenten-Wikis (Status: geschlossen).
-- `documentation-audit-ui-experience.md` – Review der UI-, Presenter- und Interaktionsdokumentation.
+- `documentation-audit-ui-experience.md` – Review der UI-, Presenter- und Interaktionsdokumentation (Status: geschlossen).
+- `ui-shortcut-coverage.md` – Automatisierte Tests für Shortcut-Workflows (Stage/Tree/Header).
 - `documentation-audit-configuration-settings.md` – Überprüfung der Konfigurations- und Settings-Dokumentation.
 - `documentation-audit-integration-api.md` – Validierung der Integrations- und Plugin-API-Dokumente.
 - `store-snapshot-immutability-tests.md` – Regressionstest für unveränderliche Store-Snapshots.
@@ -17,11 +18,11 @@ Dieses Verzeichnis sammelt alle offenen To-Dos für den Layout-Editor. Jede Date
 
 | Datei | Kategorie | Priorität | Kurzbeschreibung |
 | --- | --- | --- | --- |
-| [`documentation-audit-ui-experience.md`](documentation-audit-ui-experience.md) | Dokumentation | Mittel | UI-, Presenter- und Workflow-Dokumentation auf Lücken prüfen. |
 | [`documentation-audit-configuration-settings.md`](documentation-audit-configuration-settings.md) | Dokumentation | Mittel | Konfigurations-, Settings- und Fehlerpfad-Dokumentation abgleichen. |
 | [`documentation-audit-integration-api.md`](documentation-audit-integration-api.md) | Dokumentation | Mittel | Integrations- und Plugin-API-Guides auf Vollständigkeit prüfen. |
 | [`store-snapshot-immutability-tests.md`](store-snapshot-immutability-tests.md) | Tests | Mittel | Regressionstest sicherstellen, dass Store-Snapshots außerhalb des Stores nicht mutiert werden können. |
 | [`ui-accessibility-and-diagrams.md`](ui-accessibility-and-diagrams.md) | Dokumentation | Mittel | Sequenzdiagramme und Barrierefreiheit für UI-Flows definieren. |
+| [`ui-shortcut-coverage.md`](ui-shortcut-coverage.md) | Tests | Mittel | Shortcut-Workflows (Tree ↔ Stage ↔ Header) automatisiert absichern. |
 
 Sobald neuer Handlungsbedarf entsteht, lege eine eigene Markdown-Datei in diesem Ordner an und verlinke sie in dieser Tabelle nach Priorität.
 
@@ -37,3 +38,4 @@ Sobald neuer Handlungsbedarf entsteht, lege eine eigene Markdown-Datei in diesem
 
 - [`documentation-audit-state-model.md`](documentation-audit-state-model.md) – Audit abgeschlossen, Ergebnis siehe Abschnitt „Ergebnis (2025-09-27)“ innerhalb der Datei.
 - [`ui-components-wiki.md`](ui-components-wiki.md) – Informationsarchitektur abgeschlossen, Ergebnis siehe Abschnitt „Ergebnis (2025-02-14)“.
+- [`documentation-audit-ui-experience.md`](documentation-audit-ui-experience.md) – Dokumentationsabgleich abgeschlossen, Ergebnis siehe Abschnitt „Ergebnis (2025-03-18)“.

@@ -24,6 +24,15 @@ elements/
 | [`shared/`](./shared/README.md) | Enthält wiederverwendbare Basisklassen und Renderer für Element-Previews. Details in der [Shared-Dokumentation](./shared/README.md). |
 | [`components/`](./components/README.md) | Konkrete Elementimplementierungen für Palette & Stage. Übersicht in der [Komponenten-Dokumentation](./components/README.md). |
 
+## Dokumentationsinventar
+
+| Thema | Technische Quelle | Soll-Referenz (User-Wiki) |
+| --- | --- | --- |
+| Elemente-Basisklassen & Manifest | [`base.ts`](./base.ts), [`component-manifest.ts`](./component-manifest.ts) | [UI-Komponenten › Bibliothek & Palette](../../../docs/ui-components.md#ui-komponenten-im-%C3%BCberblick) |
+| Palette-Interaktionen | [`ui.ts`](./ui.ts), [`components/`](./components/README.md) | [Stage-Bedienkonzept › Drag-Szenario](../../../docs/stage-instrumentation.md#tests--qualit%C3%A4tssicherung) |
+| Inspector-Anbindung | [`ui.ts`](./ui.ts), [`../presenters/structure-panel.ts`](../presenters/structure-panel.ts) | [Setup-Workflows › View-Bindings](../../../docs/README.md#setup-workflows) |
+| Performance & Rendering | [`../ui/components`](../ui/components) | [UI-Performance](../../docs/ui-performance.md) |
+
 ## Arbeitsfluss
 
 1. **Komponente ableiten:** Neue Elemente bauen auf den Basisklassen aus [`shared/component-bases.ts`](./shared/component-bases.ts) auf oder implementieren `LayoutElementComponent` direkt.
@@ -48,7 +57,28 @@ elements/
 1. Neue Komponenten werden in `components/` abgelegt.
 2. `npm run build` führt das Manifest-Script aus und registriert die Komponente in `component-manifest.ts`.
 3. `registry.ts` stellt die Definition bereit; Palette, Stage und Inspector erhalten sie beim nächsten Import.
-4. Offene Diagramme für diesen Ablauf sind im To-Do [`ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md) hinterlegt.
+
+### Sequenzdiagramm: Drag & Drop Palette → Stage
+
+```mermaid
+sequenceDiagram
+    participant User as Nutzer:in
+    participant Palette as createElementsField
+    participant Presenter as StructurePanelPresenter
+    participant Store as LayoutEditorStore
+    participant Stage as StageComponent
+    User->>Palette: Start Drag auf Elementdefinition
+    Palette->>Presenter: onDragStart(definitionId)
+    Presenter->>Store: addElementFromDefinition(definitionId)
+    Store-->>Stage: Snapshot mit neuem Element (draggedElementId)
+    Stage-->>User: Vorschau & Drop-Ziel anzeigen
+    User->>Stage: Drop auf Canvas
+    Stage->>Store: runInteraction() + flushExport()
+    Store-->>Presenter: Snapshot (draggedElementId = null)
+    Presenter-->>User: Palette bestätigt Abschluss
+```
+
+Die Sequenz deckt den Soll-Ablauf „Palette → Stage“ aus dem User-Wiki ab ([Tests & Qualitätssicherung › Drag-Szenario](../../../docs/stage-instrumentation.md#tests--qualit%C3%A4tssicherung)). Automatisierte Coverage für Palette-Registrierungen befindet sich in [`../../tests/view-registry.test.ts`](../../tests/view-registry.test.ts). Offene Diagramme für angrenzende A11y-Aspekte sind im To-Do [`ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md) hinterlegt.
 
 ## Registry- & Manifest-Pipeline
 
@@ -70,5 +100,5 @@ elements/
 
 ## Offene Punkte
 
-- Workflow- und Querverweis-Review: [`documentation-audit-ui-experience.md`](../../todo/documentation-audit-ui-experience.md).
 - Sequenzdiagramme & Barrierefreiheit: [`ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md).
+- Shortcut-Testabdeckung ergänzen: [`ui-shortcut-coverage.md`](../../todo/ui-shortcut-coverage.md).

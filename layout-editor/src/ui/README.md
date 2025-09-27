@@ -14,6 +14,15 @@ ui/
 └── utils.ts           – Einstiegspunkt für modulübergreifende Helfer
 ```
 
+## Dokumentationsinventar
+
+| Thema | Technische Quelle | Soll-Referenz (User-Wiki) |
+| --- | --- | --- |
+| Stage- und Tree-Komponenten | [`components/`](components/README.md) | [Tests & Qualitätssicherung › Drag-Szenario](../../../docs/stage-instrumentation.md#tests--qualit%C3%A4tssicherung) |
+| Kontextmenüs & Aktionen | [`editor-menu.ts`](editor-menu.ts) | [UI-Komponenten › Shell & Banner](../../../docs/ui-components.md#ui-komponenten-im-%C3%BCberblick) |
+| Element-Baum & Bibliothek | [`element-tree.ts`](element-tree.ts) | [UI-Komponenten › Strukturbaum](../../../docs/ui-components/structure-tree.md) |
+| Performance-Leitplanken | [`../../docs/ui-performance.md`](../../docs/ui-performance.md) | [Stage-Instrumentierung](../../../docs/stage-instrumentation.md) |
+
 ## Inhalte
 - [`components/`](components/README.md) – Sammlung der komplexen UI-Komponenten (Stage, DiffRenderer, Shell usw.).
 - [`editor-menu.ts`](editor-menu.ts) – Erzeugt kontextuelle Aktionsmenüs für Canvas- und Bauminteraktionen.
@@ -57,6 +66,23 @@ Aus Anwendersicht ist dieser Ablauf im [User-Wiki › Stage-Bedienkonzept](../..
 
 Für den Nutzerablauf siehe [User-Wiki › Setup-Workflows › View-Bindings](../../../docs/README.md#setup-workflows).
 
+### Canvas-Snapping (Clamping) Sequenz
+
+```mermaid
+sequenceDiagram
+    participant User as Nutzer:in
+    participant Stage as StageComponent
+    participant Store as LayoutEditorStore
+    participant Telemetry as StageInteractionTelemetry
+    User->>Stage: Pointer-Drag erreicht Canvas-Rand
+    Stage->>Store: runInteraction() mit geclampter Position
+    Store-->>Stage: Snapshot mit "snapped" Elementkoordinaten
+    Store->>Telemetry: clamp:step (elementId, previous, result)
+    Stage-->>User: Visuelles Snapping & Live-Region Meldung
+```
+
+Der Ablauf entspricht dem Soll-Zustand „Canvas-Clamp“ aus dem User-Wiki ([Tests & Qualitätssicherung › Drag-Szenario](../../../docs/stage-instrumentation.md#tests--qualit%C3%A4tssicherung)). `StageComponent` meldet das Snapping synchron an Presenter und Telemetrie; Tests für die Eventfolge befinden sich in [`../../tests/layout-editor-store.instrumentation.test.ts`](../../tests/layout-editor-store.instrumentation.test.ts).
+
 ## Weiterführende Dokumentation
 - Architektur-Überblick: [`../README.md`](../README.md)
 - Performance-Guidelines für UI-Widgets: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
@@ -66,5 +92,5 @@ Für den Nutzerablauf siehe [User-Wiki › Setup-Workflows › View-Bindings](..
 
 ## Offene Punkte
 
-- Dokumentationsabgleich für Interaktionen und Presenter: [`documentation-audit-ui-experience.md`](../../todo/documentation-audit-ui-experience.md).
 - Sequenzdiagramme & A11y-Kriterien ergänzen: [`ui-accessibility-and-diagrams.md`](../../todo/ui-accessibility-and-diagrams.md).
+- Shortcut-Testabdeckung ergänzen: [`ui-shortcut-coverage.md`](../../todo/ui-shortcut-coverage.md).
