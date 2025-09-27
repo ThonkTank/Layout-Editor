@@ -21,6 +21,7 @@ import {
 import type { LayoutBlueprint, LayoutElementDefinition, LayoutElementType } from "./types";
 import { LAYOUT_EDITOR_CSS } from "./css";
 import { ensureSeedLayouts } from "./seed-layouts";
+import { onDomainConfigurationSourceChange } from "./settings/domain-settings";
 import { registerLayoutEditorSettingsTab } from "./settings/settings-tab";
 
 export const LAYOUT_EDITOR_API_VERSION = "1.0.0";
@@ -117,6 +118,11 @@ export default class LayoutEditorPlugin extends Plugin {
         resetLayoutElementDefinitions(DEFAULT_ELEMENT_DEFINITIONS);
 
         await ensureSeedLayouts(this.app);
+
+        const unsubscribeDomainSource = onDomainConfigurationSourceChange(() => {
+            void ensureSeedLayouts(this.app);
+        });
+        this.register(unsubscribeDomainSource);
 
         this.registerView(VIEW_LAYOUT_EDITOR, (leaf: WorkspaceLeaf) => new LayoutEditorView(leaf));
 
