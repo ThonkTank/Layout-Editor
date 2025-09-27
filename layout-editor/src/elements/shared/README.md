@@ -48,3 +48,7 @@ Die Dateien in diesem Ordner enthalten wiederverwendbare Bausteine, die allen El
 - **Registry:** Neue Basisklassen oder Erweiterungen müssen nichts in [`../registry.ts`](../registry.ts) ändern, solange die Komponenten-Definition `LayoutElementDefinition` erfüllt.
 - **UI-Hilfen:** Inspector-spezifische Controls kommen aus [`../ui.ts`](../ui.ts) und ergänzen die hier definierten Hooks.
 - **Presenter:** Stage- und Inspector-Präsentationen (siehe [`../../presenters`](../../presenters)) erwarten, dass Komponenten `renderPreview`/`renderInspector` so implementieren, wie es die Basisklassen vorgeben. Abweichungen sollten dokumentiert und mit Tests abgesichert werden.
+
+---
+
+Weitere Kritikpunkte siehe [To-Do „Element-Dokumentation auditieren“](../../../../todo/element-library-doc-audit.md).
