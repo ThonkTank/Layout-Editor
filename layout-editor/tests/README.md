@@ -33,3 +33,4 @@ In diesem Ordner liegen alle automatisierten Tests für den Layout-Editor. Die D
 ## To-Do
 
 - Tests prüfen, dass Store-Snapshots außerhalb des Stores nicht mutierbar sind. Neue Cases gehören in `layout-editor-store.test.ts` und `history-limits.test.ts`.
+- Struktur- und Dokumentationsabgleich: siehe [`../../todo/tooling-doc-audit.md`](../../todo/tooling-doc-audit.md).

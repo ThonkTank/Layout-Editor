@@ -22,3 +22,7 @@ Add new test files under `tests/` using the `*.test.ts` naming convention to hav
 
 - [Documentation index](./README.md)
 - Related: [Plugin API](./plugin-api.md)
+
+## Offene Aufgaben
+
+- Abgleich der Tooling-Dokumentation: siehe [`../../todo/tooling-doc-audit.md`](../../todo/tooling-doc-audit.md).
