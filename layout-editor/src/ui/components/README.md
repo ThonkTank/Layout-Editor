@@ -1,6 +1,6 @@
 # UI-Komponenten
 
-Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Canvas-Ansicht. Sie folgen dem `UIComponent`-Pattern, um DOM-Lebenszyklen und Eventlistener deterministisch zu verwalten.
+Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Canvas-Ansicht. Sie folgen dem `UIComponent`-Pattern, um DOM-Lebenszyklen und Eventlistener deterministisch zu verwalten. Eine nutzerorientierte Soll-Dokumentation der sichtbaren Komponenten findest du im User-Wiki unter [`docs/ui-components.md`](../../../docs/ui-components.md).
 
 ## Inhalte
 - [`component.ts`](component.ts) – Basisklasse `UIComponent` inkl. `UIComponentScope`, Listener-Verwaltung und `renderComponent`-Helper.
@@ -26,9 +26,13 @@ Die Komponenten in diesem Ordner implementieren die interaktiven Widgets der Can
 - Kombiniere Scope-Hilfen mit komponentenweiten `registerCleanup`-Einträgen: globale Listener bleiben am Komponenten-Scope, Knoten-spezifische Ressourcen hängen am Diff-Kontext und werden durch den Renderer freigegeben.
 
 ## Offene Aufgaben
-- [To-Do: UI-Komponenten-Wiki vervollständigen](../../../../todo/ui-components-wiki.md)
+- Accessibility-Spezifikation für Stage, Strukturbaum und Resizer ergänzen: [`ui-component-accessibility-spec.md`](../../../../todo/ui-component-accessibility-spec.md)
+- Rollen- und Berechtigungskonzept des Inspectors definieren: [`ui-component-inspector-permissions.md`](../../../../todo/ui-component-inspector-permissions.md)
+- Eskalationsregeln für Status-Banner dokumentieren: [`ui-component-status-ux-gaps.md`](../../../../todo/ui-component-status-ux-gaps.md)
+- Kontextmenü-Inventar vervollständigen: [`ui-component-menu-inventory.md`](../../../../todo/ui-component-menu-inventory.md)
 
 ## Weiterführende Dokumentation
+- User-Wiki-Referenz der UI-Komponenten: [`../../../docs/ui-components.md`](../../../docs/ui-components.md)
 - Canvas- und Rendering-Details: [`../../docs/ui-performance.md`](../../docs/ui-performance.md)
 - Architektur des `src`-Moduls: [`../../README.md`](../../README.md)
 - Projektweiter Kontext: [`../../../README.md`](../../../README.md)
