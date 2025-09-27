@@ -25,4 +25,4 @@ Add new test files under `tests/` using the `*.test.ts` naming convention to hav
 
 ## Offene Aufgaben
 
-- Abgleich der Tooling-Dokumentation: siehe [`../../todo/tooling-doc-audit.md`](../../todo/tooling-doc-audit.md).
+Derzeit keine. Ergänze hier einen Verweis, sobald im [`../../todo/`](../../todo/) Ordner neue Maßnahmen für das Tooling dokumentiert werden.
