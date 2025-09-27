@@ -58,6 +58,7 @@ Die Tests bundlen über esbuild und führen alle `*.test.ts`-Dateien in `layout-
 
 ## To-Do
 
+- [Plugin-Shell-Dokumentationsaudit](todo/plugin-shell-doc-audit.md)
 
 ## Weiterführende Dokumentation
 
